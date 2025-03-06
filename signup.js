@@ -8,9 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.querySelector("#signup-form");
   const errorContainer = document.querySelector("#error-messages");
 
-  // Allowed email domains
-  const allowedDomains = ["colascanada.ca", "blackandmcdonald.com", "greenshield.ca", "crystalthedeveloper.ca"];
-
   signupForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
       errorContainer.textContent = ""; // Clear previous errors
@@ -37,32 +34,39 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!agreePolicy) {
-          errorContainer.textContent = "You must agree to the privacy policy and terms of service.";
-          errorContainer.style.color = "red";
-          return;
-      }
-
-      // Extract email domain
-      const domain = email.split("@")[1];
-
-      // **Check if the email domain is allowed**
-      if (!allowedDomains.includes(domain)) {
-          errorContainer.textContent = "Signups are restricted to approved company emails.";
+          errorContainer.textContent = "You must agree to the privacy policy and terms.";
           errorContainer.style.color = "red";
           return;
       }
 
       try {
-          // **Signup User with Supabase**
+          // **Check if user exists in `users_access` table**
+          const { data: existingUser, error: userError } = await supabaseClient
+              .from("users_access")
+              .select("first_name, last_name, domain")
+              .eq("email", email)
+              .single();
+
+          if (userError || !existingUser) {
+              errorContainer.textContent = "Access denied. Your email is not pre-approved.";
+              errorContainer.style.color = "red";
+              return;
+          }
+
+          // Extract user info from `users_access`
+          const { domain } = existingUser;
+
+          // **Signup User with Supabase Auth**
           const { data, error } = await supabaseClient.auth.signUp({
               email,
               password,
-              options: { 
-                  data: { 
+              options: {
+                  data: {
                       first_name: firstName,
                       last_name: lastName,
+                      domain: domain,
                       marketing_consent: agreeMarketing
-                  } 
+                  }
               }
           });
 
