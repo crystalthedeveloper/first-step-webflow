@@ -6,8 +6,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    // Select login/logout buttons
+
+    // Select both login/logout buttons
     const toggleBtns = document.querySelectorAll("#auth-toggle-btn, #auth-toggle-s-btn");
 
     if (!toggleBtns.length) {
@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // **Function: Update button based on authentication status**
-    async function updateAuthButton() {
+    // **Function: Update buttons based on authentication status**
+    async function updateAuthButtons() {
         try {
             const { data: sessionData, error } = await supabaseClient.auth.getSession();
 
@@ -38,11 +38,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
         } catch (err) {
-            console.error("Error updating auth button:", err);
+            console.error("Error updating auth buttons:", err);
         }
     }
 
-    await updateAuthButton();
+    await updateAuthButtons();
 
     // **Handle button click for login/logout**
     toggleBtns.forEach((btn) => {
@@ -81,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     switch (domain) {
                         case "colascanada.ca":
-                        case "gmail.com":
                             redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home";
                             break;
                         case "blackandmcdonald.com":
