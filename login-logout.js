@@ -47,13 +47,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     // **Handle button click for login/logout**
     toggleBtns.forEach((btn) => {
         btn.addEventListener("click", async () => {
-            const authAction = btn.dataset.authAction || "login"; // Default to login if missing
+            const authAction = btn.dataset.authAction;
 
             if (authAction === "logout") {
                 try {
                     const { error } = await supabaseClient.auth.signOut();
                     if (!error) {
                         console.log("User logged out. Redirecting...");
+                        await updateAuthButtons(); // Refresh button text after logout
                         window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
                     } else {
                         console.error("Logout error:", error);
@@ -98,6 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
 
                     console.log(`User logged in. Redirecting to ${redirectUrl}...`);
+                    await updateAuthButtons(); // Refresh button text after login
                     window.location.href = redirectUrl;
 
                 } catch (error) {
