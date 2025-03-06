@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
-    // Select both login/logout buttons
+    // Select login/logout buttons
     const toggleBtns = document.querySelectorAll("#auth-toggle-btn, #auth-toggle-s-btn");
 
     if (!toggleBtns.length) {
@@ -15,26 +15,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // **Update button based on user authentication status**
+    // **Function: Update button based on authentication status**
     async function updateAuthButton() {
-        const { data: sessionData, error } = await supabaseClient.auth.getSession();
+        try {
+            const { data: sessionData, error } = await supabaseClient.auth.getSession();
 
-        if (error) {
-            console.error("Error fetching user session:", error);
-            return;
-        }
-
-        const user = sessionData.session ? sessionData.session.user : null;
-
-        toggleBtns.forEach((btn) => {
-            if (user) {
-                btn.textContent = "Logout";
-                btn.dataset.authAction = "logout";
-            } else {
-                btn.textContent = "Login";
-                btn.dataset.authAction = "login";
+            if (error) {
+                console.error("Error fetching user session:", error);
+                return;
             }
-        });
+
+            const user = sessionData?.session?.user || null;
+
+            toggleBtns.forEach((btn) => {
+                if (user) {
+                    btn.textContent = "Logout";
+                    btn.dataset.authAction = "logout";
+                } else {
+                    btn.textContent = "Login";
+                    btn.dataset.authAction = "login";
+                }
+            });
+
+        } catch (err) {
+            console.error("Error updating auth button:", err);
+        }
     }
 
     await updateAuthButton();
@@ -42,13 +47,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     // **Handle button click for login/logout**
     toggleBtns.forEach((btn) => {
         btn.addEventListener("click", async () => {
-            const authAction = btn.dataset.authAction;
+            const authAction = btn.dataset.authAction || "login"; // Default to login if missing
 
             if (authAction === "logout") {
                 try {
                     const { error } = await supabaseClient.auth.signOut();
                     if (!error) {
+                        console.log("User logged out. Redirecting...");
                         window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+                    } else {
+                        console.error("Logout error:", error);
                     }
                 } catch (error) {
                     console.error("Logout error:", error);
@@ -57,31 +65,42 @@ document.addEventListener("DOMContentLoaded", async () => {
                 try {
                     // **Check user session**
                     const { data: sessionData } = await supabaseClient.auth.getSession();
+                    const user = sessionData?.session?.user;
 
-                    if (!sessionData.session) {
+                    if (!user) {
+                        console.log("No active session. Redirecting to login...");
                         window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
                         return;
                     }
 
-                    const email = sessionData.session.user.email;
+                    const email = user.email;
                     const domain = email.split("@")[1];
 
                     // **Redirect users based on email domain**
-                    let redirectUrl = "https://firststep-46e83b.webflow.io";
+                    let redirectUrl = "https://firststep-46e83b.webflow.io"; // Default page
 
-                    if (domain === "colascanada.ca" || domain === "gmail.com") {
-                        redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home";
-                    } else if (domain === "blackandmcdonald.com") {
-                        redirectUrl = "https://firststep-46e83b.webflow.io/blackandmcdonald/home";
-                    } else if (domain === "greenshield.ca") {
-                        redirectUrl = "https://firststep-46e83b.webflow.io/greenshield/home";
-                    } else if (domain === "crystalthedeveloper.ca") {
-                        redirectUrl = "https://firststep-46e83b.webflow.io";
-                    } else {
-                        redirectUrl = "https://firststep-46e83b.webflow.io/access-denied";
+                    switch (domain) {
+                        case "colascanada.ca":
+                        case "gmail.com":
+                            redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home";
+                            break;
+                        case "blackandmcdonald.com":
+                            redirectUrl = "https://firststep-46e83b.webflow.io/blackandmcdonald/home";
+                            break;
+                        case "greenshield.ca":
+                            redirectUrl = "https://firststep-46e83b.webflow.io/greenshield/home";
+                            break;
+                        case "crystalthedeveloper.ca":
+                            redirectUrl = "https://firststep-46e83b.webflow.io";
+                            break;
+                        default:
+                            redirectUrl = "https://firststep-46e83b.webflow.io/access-denied";
+                            break;
                     }
 
+                    console.log(`User logged in. Redirecting to ${redirectUrl}...`);
                     window.location.href = redirectUrl;
+
                 } catch (error) {
                     console.error("Login error:", error);
                 }
