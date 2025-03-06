@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const agreePolicy = document.querySelector("#agree-policy")?.checked;
       const agreeMarketing = document.querySelector("#agree-marketing")?.checked;
 
-      // **Validation Checks**
       if (!email || !password || !firstName || !lastName) {
           errorContainer.textContent = "All fields are required.";
           errorContainer.style.color = "red";
@@ -40,21 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-          // **Extract email domain**
           const domain = email.split("@")[1];
-
-          // **Check if the user already exists in `users_access` table**
-          const { data: existingUser, error: userError } = await supabaseClient
-              .from("users_access")
-              .select("email")
-              .eq("email", email)
-              .single();
-
-          if (existingUser) {
-              errorContainer.textContent = "This email is already registered. Please log in.";
-              errorContainer.style.color = "red";
-              return;
-          }
 
           // **Sign Up User with Supabase Auth**
           const { data, error } = await supabaseClient.auth.signUp({
@@ -91,10 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
               console.error("Error adding user to users_access:", insertError);
           }
 
-          errorContainer.textContent = "Signup successful! Your account is pending approval.";
+          errorContainer.textContent = "Signup successful! Please verify your email.";
           errorContainer.style.color = "green";
 
-          // **Redirect to login page after 2 seconds**
           setTimeout(() => {
               window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
           }, 2000);
