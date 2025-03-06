@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
         formError.textContent = message; // Update error container
     };
 
+    // Allowed email domains
+    const allowedDomains = ["blackandmcdonald.com", "greenshield.ca", "colascanada.ca", "gmail.com", "crystalthedeveloper.ca"];
+
     // Handle login form submission
     loginForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -37,8 +40,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (error) throw error;
 
-            displayError(""); // Clear errors if successful
-            window.location.href = "https://firststep-46e83b.webflow.io";
+            // Check user email domain
+            const userEmail = data.user?.email;
+            if (!userEmail) {
+                displayError("Unable to verify email.");
+                return;
+            }
+
+            const domain = userEmail.split("@")[1]; // Extract domain from email
+
+            if (allowedDomains.includes(domain)) {
+                // Redirect to the main page if the domain is allowed
+                window.location.href = "https://firststep-46e83b.webflow.io";
+            } else {
+                // Redirect to an access-denied page if domain is not allowed
+                window.location.href = "https://firststep-46e83b.webflow.io/access-denied";
+            }
+
         } catch (err) {
             displayError(`Login failed: ${err.message}`); // Display error message
         }

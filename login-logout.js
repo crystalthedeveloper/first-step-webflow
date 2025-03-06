@@ -7,9 +7,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const toggleBtn = document.querySelector("#auth-toggle-btn");
 
-    // Update button based on user authentication status
+    if (!toggleBtn) {
+        console.error("Auth toggle button not found!");
+        return;
+    }
+
+    // **Update button based on user authentication status**
     async function updateAuthButton() {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
+
+        if (error) {
+            console.error("Error fetching user:", error);
+            return;
+        }
 
         if (user) {
             toggleBtn.textContent = "Logout";
@@ -22,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await updateAuthButton();
 
-    // Handle button click for login/logout
+    // **Handle button click for login/logout**
     toggleBtn.addEventListener("click", async () => {
         const authAction = toggleBtn.dataset.authAction;
 
@@ -30,13 +40,40 @@ document.addEventListener("DOMContentLoaded", async () => {
             try {
                 const { error } = await supabaseClient.auth.signOut();
                 if (!error) {
-                    window.location.href = "https://firststep-46e83b.webflow.io/";
+                    window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
                 }
             } catch (error) {
-                // Optional: handle silent errors if needed
+                console.error("Logout error:", error);
             }
         } else if (authAction === "login") {
-            window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+            try {
+                // **Check user session and redirect accordingly**
+                const { data: sessionData } = await supabaseClient.auth.getSession();
+
+                if (!sessionData.session) {
+                    window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+                    return;
+                }
+
+                const email = sessionData.session.user.email;
+                const domain = email.split("@")[1];
+
+                // **Redirect users based on email domain**
+                if (domain === "colascanada.ca" || domain === "gmail.com") {
+                    window.location.href = "https://firststep-46e83b.webflow.io/colascanada/home";
+                } else if (domain === "blackandmcdonald.com") {
+                    window.location.href = "https://firststep-46e83b.webflow.io/blackandmcdonald/home";
+                } else if (domain === "greenshield.ca") {
+                    window.location.href = "https://firststep-46e83b.webflow.io/greenshield/home";
+                } else if (domain === "crystalthedeveloper.ca") {
+                    window.location.href = "https://firststep-46e83b.webflow.io";
+                } else {
+                    window.location.href = "https://firststep-46e83b.webflow.io/access-denied";
+                }
+
+            } catch (error) {
+                console.error("Login error:", error);
+            }
         }
     });
 });
