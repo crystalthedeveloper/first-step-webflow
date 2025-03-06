@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
       event.preventDefault();
       errorContainer.textContent = "";
 
-      // Get input values
+      // **Get input values**
       const email = document.querySelector("#signup-email")?.value.trim();
       const firstName = document.querySelector("#signup-first-name")?.value.trim();
       const lastName = document.querySelector("#signup-last-name")?.value.trim();
@@ -20,82 +20,92 @@ document.addEventListener("DOMContentLoaded", () => {
       const agreePolicy = document.querySelector("#agree-policy")?.checked;
       const agreeMarketing = document.querySelector("#agree-marketing")?.checked;
 
+      // **Validation**
       if (!email || !password || !firstName || !lastName) {
-          errorContainer.textContent = "All fields are required.";
-          errorContainer.style.color = "red";
+          displayError("All fields are required.");
           return;
       }
 
       if (password.length < 6) {
-          errorContainer.textContent = "Password must be at least 6 characters long.";
-          errorContainer.style.color = "red";
+          displayError("Password must be at least 6 characters long.");
           return;
       }
 
       if (!agreePolicy) {
-          errorContainer.textContent = "You must agree to the privacy policy and terms.";
-          errorContainer.style.color = "red";
+          displayError("You must agree to the privacy policy and terms.");
           return;
       }
 
       try {
           const domain = email.split("@")[1];
 
-          // **Sign Up User with Supabase Auth**
-          const { data, error } = await supabaseClient.auth.signUp({
+          // **Step 1: Register the User in Supabase Auth**
+          const { data: authData, error: authError } = await supabaseClient.auth.signUp({
               email,
               password
           });
 
-          if (error) throw error;
+          if (authError) throw authError;
 
-          // **Wait for user confirmation (auth.getUser)**
+          console.log("Signup initiated. Waiting for email confirmation...");
+
+          // **Step 2: Wait for Email Confirmation**
           let confirmedUser = null;
           let retries = 0;
-          while (!confirmedUser && retries < 10) {
-              const { data: userData } = await supabaseClient.auth.getUser();
-              if (userData?.user) {
+          while (!confirmedUser && retries < 15) {
+              const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+              if (userError) {
+                  console.error("Error checking user confirmation:", userError);
+              }
+              if (userData?.user?.email_confirmed_at) {
                   confirmedUser = userData.user;
               } else {
-                  await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+                  await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
               }
               retries++;
           }
 
           if (!confirmedUser) {
-              errorContainer.textContent = "Please check your email to verify your account.";
-              errorContainer.style.color = "red";
+              displayError("Please check your email and verify your account before logging in.");
               return;
           }
 
-          // **Add user to `users_access` table with 'pre-approved' status**
+          console.log("Email confirmed. Proceeding to database entry...");
+
+          // **Step 3: Insert User into `users_access` Table**
           const { error: insertError } = await supabaseClient
               .from("users_access")
               .insert([
                   {
-                      email: email,
+                      email,
                       first_name: firstName,
                       last_name: lastName,
-                      domain: domain,
+                      domain,
                       role: "user",
-                      status: "pre-approved",
+                      status: "approved", // Automatically approve upon email confirmation
                       created_at: new Date().toISOString()
                   }
               ]);
 
           if (insertError) {
-              console.error("Error adding user to users_access:", insertError);
+              console.error("Error inserting into users_access:", insertError);
           }
 
-          errorContainer.textContent = "Signup successful! Please verify your email.";
+          // **Step 4: Success Message & Redirect**
+          errorContainer.textContent = "Signup successful! Redirecting to login...";
           errorContainer.style.color = "green";
 
           setTimeout(() => {
               window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
           }, 2000);
       } catch (err) {
-          errorContainer.textContent = `Signup failed: ${err.message}`;
-          errorContainer.style.color = "red";
+          displayError(`Signup failed: ${err.message}`);
       }
   });
+
+  // **Helper Function to Display Errors**
+  function displayError(message) {
+      errorContainer.textContent = message;
+      errorContainer.style.color = "red";
+  }
 });

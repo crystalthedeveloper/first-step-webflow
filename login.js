@@ -1,22 +1,20 @@
 // Login
 document.addEventListener("DOMContentLoaded", () => {
-    // Supabase configuration
     const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+    const SUPABASE_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
 
-    // Initialize Supabase client
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const loginForm = document.querySelector("#login-form");
     const formError = document.querySelector("#form-error");
 
-    // Utility function to display error messages
+    // **Helper function to display error messages**
     const displayError = (message) => {
         formError.textContent = message;
         formError.style.color = "red"; // Make error messages red
     };
 
-    // Handle login form submission
+    // **Handle login form submission**
     loginForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         formError.textContent = ""; // Clear previous errors
@@ -30,21 +28,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Authenticate user with Supabase
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
+            // **Step 1: Authenticate User with Supabase**
+            const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
                 email,
                 password,
             });
 
-            if (error) throw error;
+            if (authError) throw authError;
 
-            // **Ensure user has verified their email before logging in**
-            if (!data.user?.email_confirmed_at) {
+            // **Step 2: Check if email is confirmed**
+            const { data: userSession } = await supabaseClient.auth.getUser();
+            if (!userSession?.user?.email_confirmed_at) {
                 displayError("Please verify your email before logging in.");
                 return;
             }
 
-            // Fetch user info from `users_access`
+            // **Step 3: Fetch User Data from `users_access` Table**
             const { data: userData, error: userError } = await supabaseClient
                 .from("users_access")
                 .select("first_name, last_name, domain, status")
@@ -56,30 +55,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // **Check if user is approved**
+            // **Step 4: Ensure User is Approved**
             if (userData.status !== "approved") {
                 displayError("Your account is pending approval. Please wait for admin approval.");
                 return;
             }
 
-            // Redirect users based on domain
+            // **Step 5: Redirect Users Based on Domain**
             let redirectUrl = "https://firststep-46e83b.webflow.io"; // Default page
 
-            if (userData.domain === "colascanada.ca") {
-                redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home";
-            } else if (userData.domain === "blackandmcdonald.com") {
-                redirectUrl = "https://firststep-46e83b.webflow.io/blackandmcdonald/home";
-            } else if (userData.domain === "greenshield.ca") {
-                redirectUrl = "https://firststep-46e83b.webflow.io/greenshield/home";
-            } else if (userData.domain === "crystalthedeveloper.ca") {
-                redirectUrl = "https://firststep-46e83b.webflow.io";
-            } else {
-                // Unauthorized domain
-                displayError("Access denied. Your domain is not allowed.");
-                return;
+            switch (userData.domain) {
+                case "colascanada.ca":
+                    redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home";
+                    break;
+                case "blackandmcdonald.com":
+                    redirectUrl = "https://firststep-46e83b.webflow.io/blackandmcdonald/home";
+                    break;
+                case "greenshield.ca":
+                    redirectUrl = "https://firststep-46e83b.webflow.io/greenshield/home";
+                    break;
+                case "crystalthedeveloper.ca":
+                    redirectUrl = "https://firststep-46e83b.webflow.io";
+                    break;
+                default:
+                    displayError("Access denied. Your domain is not allowed.");
+                    return;
             }
 
-            // Show welcome message before redirecting
+            // **Step 6: Success Message & Redirect**
             formError.textContent = `Welcome, ${userData.first_name}! Redirecting...`;
             formError.style.color = "green";
 
@@ -89,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
             displayError(`Login failed: ${err.message}`);
+            console.error("Login Error:", err);
         }
     });
 });
