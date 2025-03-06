@@ -40,23 +40,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       try {
-          // **Check if user exists in `users_access` table**
+          // **Extract email domain**
+          const domain = email.split("@")[1];
+
+          // **Check if the user already exists in `users_access` table**
           const { data: existingUser, error: userError } = await supabaseClient
               .from("users_access")
-              .select("first_name, last_name, domain")
+              .select("email")
               .eq("email", email)
               .single();
 
-          if (userError || !existingUser) {
-              errorContainer.textContent = "Access denied. Your email is not pre-approved.";
+          if (existingUser) {
+              errorContainer.textContent = "This email is already registered. Please log in.";
               errorContainer.style.color = "red";
               return;
           }
 
-          // Extract user info from `users_access`
-          const { domain } = existingUser;
-
-          // **Signup User with Supabase Auth**
+          // **Sign Up User with Supabase Auth**
           const { data, error } = await supabaseClient.auth.signUp({
               email,
               password,
@@ -72,7 +72,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (error) throw error;
 
-          errorContainer.textContent = "Signup successful! Please verify your email.";
+          // **Add the user to `users_access` table with 'pre-approved' status**
+          const { error: insertError } = await supabaseClient
+              .from("users_access")
+              .insert([
+                  {
+                      email: email,
+                      first_name: firstName,
+                      last_name: lastName,
+                      domain: domain,
+                      role: "user",
+                      status: "pre-approved",
+                      created_at: new Date().toISOString()
+                  }
+              ]);
+
+          if (insertError) {
+              console.error("Error adding user to users_access:", insertError);
+          }
+
+          errorContainer.textContent = "Signup successful! Your account is pending approval.";
           errorContainer.style.color = "green";
 
           // **Redirect to login page after 2 seconds**
