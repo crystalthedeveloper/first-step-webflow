@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   signupForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
-      errorContainer.textContent = ""; // Clear previous errors
+      errorContainer.textContent = "";
 
       // Get input values
       const email = document.querySelector("#signup-email")?.value.trim();
@@ -44,20 +44,31 @@ document.addEventListener("DOMContentLoaded", () => {
           // **Sign Up User with Supabase Auth**
           const { data, error } = await supabaseClient.auth.signUp({
               email,
-              password,
-              options: {
-                  data: {
-                      first_name: firstName,
-                      last_name: lastName,
-                      domain: domain,
-                      marketing_consent: agreeMarketing
-                  }
-              }
+              password
           });
 
           if (error) throw error;
 
-          // **Add the user to `users_access` table with 'pre-approved' status**
+          // **Wait for user confirmation (auth.getUser)**
+          let confirmedUser = null;
+          let retries = 0;
+          while (!confirmedUser && retries < 10) {
+              const { data: userData } = await supabaseClient.auth.getUser();
+              if (userData?.user) {
+                  confirmedUser = userData.user;
+              } else {
+                  await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+              }
+              retries++;
+          }
+
+          if (!confirmedUser) {
+              errorContainer.textContent = "Please check your email to verify your account.";
+              errorContainer.style.color = "red";
+              return;
+          }
+
+          // **Add user to `users_access` table with 'pre-approved' status**
           const { error: insertError } = await supabaseClient
               .from("users_access")
               .insert([
