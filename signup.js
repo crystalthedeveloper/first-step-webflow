@@ -51,7 +51,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("Signup initiated. Waiting for email confirmation...");
 
-      // **Step 2: Insert User into `users_access` Table**
+      // **Step 2: Check If Email Confirmation is Required**
+      let emailConfirmed = false;
+      let retries = 0;
+      while (!emailConfirmed && retries < 10) {
+        const { data: userSession, error: userError } = await supabaseClient.auth.getUser();
+
+        if (userError) console.error("Error checking user confirmation:", userError);
+        if (userSession?.user?.email_confirmed_at) emailConfirmed = true;
+
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+        retries++;
+      }
+
+      if (!emailConfirmed) {
+        // **Resend Confirmation Email If Not Received**
+        console.log("Resending email confirmation...");
+        await supabaseClient.auth.resend({ type: "signup", email });
+
+        displayError("Please check your email and verify your account.");
+        return;
+      }
+
+      console.log("Email confirmed. Proceeding to database entry...");
+
+      // **Step 3: Insert User into `users_access` Table**
       const { error: insertError } = await supabaseClient.from("users_access").insert([
         {
           email,
@@ -59,16 +83,16 @@ document.addEventListener("DOMContentLoaded", () => {
           last_name: lastName,
           domain,
           role: "user",
-          status: "pending", // Default to pending until admin approval
+          status: "approved", // Automatically approve after email confirmation
           created_at: new Date().toISOString(),
         },
       ]);
 
       if (insertError) console.error("Error inserting into users_access:", insertError);
 
-      // **Step 3: Success Message & Redirect**
+      // **Step 4: Success Message & Redirect**
       errorContainer.textContent =
-        "Signup successful! Please check your email and verify your account before logging in.";
+        "Signup successful! Redirecting to login...";
       errorContainer.style.color = "green";
 
       setTimeout(() => {
