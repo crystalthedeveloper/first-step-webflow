@@ -15,12 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
       event.preventDefault();
       errorContainer.textContent = ""; // Clear previous errors
 
+      // Get input values
       const email = document.querySelector("#signup-email")?.value.trim();
-      const password = document.querySelector("#signup-password")?.value.trim();
       const firstName = document.querySelector("#signup-first-name")?.value.trim();
+      const lastName = document.querySelector("#signup-last-name")?.value.trim();
+      const password = document.querySelector("#signup-password")?.value.trim();
+      const agreePolicy = document.querySelector("#agree-policy")?.checked;
+      const agreeMarketing = document.querySelector("#agree-marketing")?.checked;
 
       // **Validation Checks**
-      if (!email || !password || !firstName) {
+      if (!email || !password || !firstName || !lastName) {
           errorContainer.textContent = "All fields are required.";
           errorContainer.style.color = "red";
           return;
@@ -28,6 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (password.length < 6) {
           errorContainer.textContent = "Password must be at least 6 characters long.";
+          errorContainer.style.color = "red";
+          return;
+      }
+
+      if (!agreePolicy) {
+          errorContainer.textContent = "You must agree to the privacy policy and terms of service.";
           errorContainer.style.color = "red";
           return;
       }
@@ -47,7 +57,13 @@ document.addEventListener("DOMContentLoaded", () => {
           const { data, error } = await supabaseClient.auth.signUp({
               email,
               password,
-              options: { data: { first_name: firstName } },
+              options: { 
+                  data: { 
+                      first_name: firstName,
+                      last_name: lastName,
+                      marketing_consent: agreeMarketing
+                  } 
+              }
           });
 
           if (error) throw error;
