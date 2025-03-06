@@ -1,8 +1,7 @@
 // Signup Form
 document.addEventListener("DOMContentLoaded", () => {
   const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-  const SUPABASE_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const signupForm = document.querySelector("#signup-form");
@@ -51,21 +50,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("Signup initiated. Waiting for email confirmation...");
 
-      // **Step 2: Check If Email Confirmation is Required**
+      // **Step 2: Wait for Email Confirmation**
       let emailConfirmed = false;
       let retries = 0;
-      while (!emailConfirmed && retries < 10) {
-        const { data: userSession, error: userError } = await supabaseClient.auth.getUser();
+      let userId = null;
 
-        if (userError) console.error("Error checking user confirmation:", userError);
-        if (userSession?.user?.email_confirmed_at) emailConfirmed = true;
+      while (!emailConfirmed && retries < 10) {
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getUser();
+        if (sessionError) console.error("Error checking user confirmation:", sessionError);
+
+        if (sessionData?.user?.email_confirmed_at) {
+          emailConfirmed = true;
+          userId = sessionData.user.id; // Get the user ID from Supabase Auth
+        }
 
         await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
         retries++;
       }
 
       if (!emailConfirmed) {
-        // **Resend Confirmation Email If Not Received**
         console.log("Resending email confirmation...");
         await supabaseClient.auth.resend({ type: "signup", email });
 
@@ -78,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // **Step 3: Insert User into `users_access` Table**
       const { error: insertError } = await supabaseClient.from("users_access").insert([
         {
+          id: userId, // Store the user's unique ID
           email,
           first_name: firstName,
           last_name: lastName,
@@ -88,11 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       ]);
 
-      if (insertError) console.error("Error inserting into users_access:", insertError);
+      if (insertError) {
+        console.error("Error inserting into users_access:", insertError);
+        displayError("Error creating user. Please try again later.");
+        return;
+      }
 
       // **Step 4: Success Message & Redirect**
-      errorContainer.textContent =
-        "Signup successful! Redirecting to login...";
+      errorContainer.textContent = "Signup successful! Redirecting to login...";
       errorContainer.style.color = "green";
 
       setTimeout(() => {
