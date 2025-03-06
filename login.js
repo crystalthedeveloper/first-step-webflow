@@ -41,24 +41,28 @@ document.addEventListener("DOMContentLoaded", () => {
   
         console.log("User authenticated. Checking access table...");
   
-        // **Step 3: Check if User Exists in `users_access`**
+        // **Step 3: Extract User Info**
+        const domain = email.split("@")[1];
+        const firstName = user.user_metadata?.first_name || "Unknown";
+        const lastName = user.user_metadata?.last_name || "Unknown";
+  
+        // **Step 4: Check if User Exists in `users_access`**
         const { data: userData, error: userError } = await supabaseClient
           .from("users_access")
           .select("id")
           .eq("email", email)
           .single();
   
-        // **Step 4: If User is NOT in `users_access`, Add Them**
+        // **Step 5: If User is NOT in `users_access`, Add Them**
         if (userError || !userData) {
           console.log("User not found in users_access. Adding them...");
-          const domain = email.split("@")[1];
   
           const { error: insertError } = await supabaseClient.from("users_access").insert([
             {
               id: user.id,
               email,
-              first_name: user.user_metadata?.first_name || "",
-              last_name: user.user_metadata?.last_name || "",
+              first_name: firstName,
+              last_name: lastName,
               domain,
               role: "user",
               status: "approved", // Auto-approve
@@ -75,10 +79,11 @@ document.addEventListener("DOMContentLoaded", () => {
           console.log("User already exists in users_access.");
         }
   
-        // **Step 5: Redirect Based on Domain**
-        let redirectUrl = "https://firststep-46e83b.webflow.io"; // Default page
+        // **Step 6: Redirect Based on Domain**
+        let redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home"; // Default page
   
         const domainRedirects = {
+          "gmail.com": "https://firststep-46e83b.webflow.io/colascanada/home",
           "colascanada.ca": "https://firststep-46e83b.webflow.io/colascanada/home",
           "blackandmcdonald.com": "https://firststep-46e83b.webflow.io/blackandmcdonald/home",
           "greenshield.ca": "https://firststep-46e83b.webflow.io/greenshield/home",
