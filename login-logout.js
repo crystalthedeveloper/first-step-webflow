@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const domain = email.split("@")[1];
 
                     // **Redirect users based on email domain**
-                    let redirectUrl = "https://firststep-46e83b.webflow.io"; // Default page
+                    let redirectUrl = "https://firststep-46e83b.webflow.io/colascanada/home"; // Default page
 
                     switch (domain) {
                         case "colascanada.ca":
