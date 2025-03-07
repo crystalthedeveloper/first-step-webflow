@@ -1,11 +1,11 @@
-//add-user.js
-// Ensure Supabase is properly initialized in the browser
+// add-user.js
+// Manually Confirm Emails in Supabase
+// Ensure Supabase is properly initialized in Webflow
 document.addEventListener("DOMContentLoaded", async () => {
     const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
     const SUPABASE_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
 
-    // **Ensure Supabase script is loaded in Webflow**
     if (typeof supabase === "undefined") {
         console.error("⚠️ Supabase is not defined. Make sure you include the Supabase JS SDK.");
         return;
@@ -35,19 +35,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             // **Generate a Temporary Password**
             const tempPassword = "TempPass123!"; // Change if needed.
 
-            // **Step 1: Create User in Supabase Auth (Auto-Confirm Email)**
-            const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+            // **Step 1: Create User Normally (No Admin Call)**
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                 email,
                 password: tempPassword,
-                email_confirm: true, // Automatically confirm the email
-                user_metadata: { first_name: firstName, last_name: lastName },
+                options: {
+                    data: { first_name: firstName, last_name: lastName },
+                },
             });
 
             if (authError) throw authError;
-            console.log(`✅ User created in Auth (Confirmed Email): ${email}`);
+            console.log(`✅ User created in Auth: ${email}`);
 
-            // **Step 2: Insert User into users_access Table**
-            const domain = email.split("@")[1]; // Extract domain
+            // **Step 2: Manually Confirm Email in Supabase**
+            const { error: confirmError } = await supabaseClient
+                .from("auth.users")
+                .update({ email_confirmed_at: new Date().toISOString() })
+                .eq("email", email);
+
+            if (confirmError) throw confirmError;
+            console.log(`✅ Email manually confirmed for: ${email}`);
+
+            // **Step 3: Insert User into users_access Table**
+            const domain = email.split("@")[1];
 
             const { error: dbError } = await supabaseClient.from("users_access").insert([
                 {
