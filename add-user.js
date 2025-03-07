@@ -35,17 +35,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             // **Generate a Temporary Password**
             const tempPassword = "TempPass123!"; // Change if needed.
 
-            // **Step 1: Create User in Supabase Auth**
-            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            // **Step 1: Create User in Supabase Auth (Auto-Confirm Email)**
+            const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
                 email,
                 password: tempPassword,
-                options: {
-                    data: { first_name: firstName, last_name: lastName },
-                },
+                email_confirm: true, // Automatically confirm the email
+                user_metadata: { first_name: firstName, last_name: lastName },
             });
 
             if (authError) throw authError;
-            console.log(`✅ User created in Auth: ${email}`);
+            console.log(`✅ User created in Auth (Confirmed Email): ${email}`);
 
             // **Step 2: Insert User into users_access Table**
             const domain = email.split("@")[1]; // Extract domain
