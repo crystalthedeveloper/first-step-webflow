@@ -47,17 +47,17 @@ document.addEventListener("DOMContentLoaded", () => {
             const lastName = user.user_metadata?.last_name || "Unknown";
 
             // **Step 4: Check if User Exists in `users_access`**
-            let { data: userData, error: userError } = await supabaseClient
+            const { data: userData, error: userError } = await supabaseClient
                 .from("users_access")
                 .select("id")
                 .eq("email", email)
                 .single();
 
-            // **Step 5: If User is NOT in `users_access`, Add Them**
-            if (userError || !userData) {
+            // **Step 5: Insert User if Not Exists**
+            if (!userData) {
                 console.log("🚀 User not found in users_access. Adding them...");
 
-                const { error: insertError } = await supabaseClient.from("users_access").insert([
+                const { error: insertError } = await supabaseClient.from("users_access").upsert([
                     {
                         id: user.id,
                         email,
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             // **Use fallback redirect if domain isn't recognized**
-            const redirectUrl = domainRedirects[domain] || "https://firststep-46e83b.webflow.io/access-denied";
+            const redirectUrl = domainRedirects[domain] || "https://firststep-46e83b.webflow.io/user-pages/access-denied";
 
             console.log(`🔄 Redirecting user to: ${redirectUrl}`);
 
