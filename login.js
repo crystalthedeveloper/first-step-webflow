@@ -1,9 +1,12 @@
 // Login
 document.addEventListener("DOMContentLoaded", () => {
-    const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+    // Wait for Supabase to load
+    if (!window.supabaseClient) {
+        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        return;
+    }
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = window.supabaseClient;
     const loginForm = document.querySelector("#login-form");
     const formError = document.querySelector("#form-error");
 
@@ -26,12 +29,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             // **Step 1: Authenticate User**
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) throw error;
 
             // **Step 2: Ensure Email is Verified**
-            const { data: userSession } = await supabaseClient.auth.getUser();
+            const { data: userSession } = await supabase.auth.getUser();
             const user = userSession?.user;
 
             if (!user || !user.email_confirmed_at) {
@@ -47,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const lastName = user.user_metadata?.last_name || "Unknown";
 
             // **Step 4: Check if User Exists in `users_access`**
-            const { data: userData, error: userError } = await supabaseClient
+            const { data: userData, error: userError } = await supabase
                 .from("users_access")
                 .select("id")
                 .eq("email", email)
@@ -57,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!userData) {
                 console.log("🚀 User not found in users_access. Adding them...");
 
-                const { error: insertError } = await supabaseClient.from("users_access").upsert([
+                const { error: insertError } = await supabase.from("users_access").upsert([
                     {
                         id: user.id,
                         email,
