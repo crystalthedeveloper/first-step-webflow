@@ -9,10 +9,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Fetch the user's session
     const { data: { session } } = await supabaseClient.auth.getSession();
     const homeLink = document.getElementById("firststep");
+    const modulesLink = document.getElementById("modules");
     
     if (!homeLink) {
         console.error("❌ Navbar link with ID 'firststep' not found.");
-        return;
+    }
+    
+    if (!modulesLink) {
+        console.error("❌ Navbar link with ID 'modules' not found.");
     }
     
     if (session && session.user) {
@@ -27,12 +31,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             "crystalthedeveloper.ca": "/"
         };
         
-        const newLink = domainRedirects[userDomain] || "/user-pages/access-denied";
+        const modulesRedirects = {
+            "gmail.com": "/colascanada/modules",
+            "colascanada.ca": "/colascanada/modules",
+            "blackandmcdonald.com": "/blackandmcdonald/modules",
+            "greenshield.ca": "/greenshield/modules",
+            "crystalthedeveloper.ca": "/modules"
+        };
         
-        console.log(`🔄 Updating Home link to: ${newLink}`);
-        homeLink.href = newLink;
+        const newHomeLink = domainRedirects[userDomain] || "/user-pages/access-denied";
+        const newModulesLink = modulesRedirects[userDomain] || "/user-pages/access-denied";
+        
+        console.log(`🔄 Updating Home link to: ${newHomeLink}`);
+        console.log(`🔄 Updating Modules link to: ${newModulesLink}`);
+        
+        if (homeLink) homeLink.href = newHomeLink;
+        if (modulesLink) modulesLink.href = newModulesLink;
     } else {
-        console.log("👤 User not logged in. Keeping default link.");
-        homeLink.href = "/"; // Default home link for non-logged-in users
+        console.log("👤 User not logged in. Keeping default links.");
+        if (homeLink) homeLink.href = "/"; // Default home link for non-logged-in users
+        if (modulesLink) modulesLink.href = "/modules"; // Default modules link for non-logged-in users
     }
 });
