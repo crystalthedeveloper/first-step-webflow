@@ -14,11 +14,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // **User access rules based on email domain**
     const domainAccess = {
-        "colascanada.ca": "/colascanada/home",
-        "gmail.com": "/colascanada/home",
+        "colascanada.ca": ["/colascanada/home", "/colascanada/modules"],
+        "gmail.com": ["/colascanada/home", "/colascanada/modules"],
         "gmail.com": "/colascanada/modules",
-        "blackandmcdonald.com": "/blackandmcdonald/home",
-        "greenshield.ca": "/greenshield/home",
+        "blackandmcdonald.com": ["/blackandmcdonald/home", "/blackandmcdonald/modules"],
+        "greenshield.ca": ["/greenshield/home", "/greenshield/modules"],
         "crystalthedeveloper.ca": "/" // Crystal gets access to homepage
     };
 
@@ -48,7 +48,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log(`User logged in: ${email} (Domain: ${domain})`);
 
         // **Check if user has access to this folder**
-        const allowedPath = domainAccess[domain];
+        const allowedPaths = domainAccess[domain] || [];
+        const hasAccess = Array.isArray(allowedPaths) ? allowedPaths.some(path => currentPath.startsWith(path)) : currentPath.startsWith(allowedPaths);
+        
+        if (!hasAccess)
 
         if (!allowedPath || !currentPath.startsWith(allowedPath)) {
             console.warn(`Unauthorized access to ${currentPath}. Redirecting to: /access-denied`);
