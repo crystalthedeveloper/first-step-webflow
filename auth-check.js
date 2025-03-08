@@ -1,4 +1,4 @@
-// auth-check.js - Check for user session and update navbar/footer links
+// auth-check.js - Check for user session
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Wait for Supabase to load
@@ -14,16 +14,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // **User access rules based on email domain**
     const domainAccess = {
-        "colascanada.ca": "/colascanada/",
-        "gmail.com": "/colascanada/",
-        "blackandmcdonald.com": "/blackandmcdonald/",
-        "greenshield.ca": "/greenshield/",
+        "colascanada.ca": "/colascanada/home",
+        "gmail.com": "/colascanada/home",
+        "gmail.com": "/colascanada/modules",
+        "blackandmcdonald.com": "/blackandmcdonald/home",
+        "greenshield.ca": "/greenshield/home",
         "crystalthedeveloper.ca": "/" // Crystal gets access to homepage
     };
-
-    // **Navbar and Footer links**
-    const homeLinks = document.querySelectorAll("#firststep, #firststep-footer");
-    const modulesLinks = document.querySelectorAll("#modules, #modules-footer");
 
     // **Check if the page requires authentication**
     const currentPath = window.location.pathname;
@@ -31,6 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!isProtected) {
         console.log("This page does not require authentication.");
+        return; // Stop script if page is public
     }
 
     try {
@@ -59,32 +57,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         console.log(`Access granted to ${currentPath}`);
-
-        // **Update Navbar and Footer Links**
-        const domainRedirects = {
-            "gmail.com": "/colascanada/home",
-            "colascanada.ca": "/colascanada/home",
-            "blackandmcdonald.com": "/blackandmcdonald/home",
-            "greenshield.ca": "/greenshield/home",
-            "crystalthedeveloper.ca": "/"
-        };
-
-        const modulesRedirects = {
-            "gmail.com": "/colascanada/modules",
-            "colascanada.ca": "/colascanada/modules",
-            "blackandmcdonald.com": "/blackandmcdonald/modules",
-            "greenshield.ca": "/greenshield/modules",
-            "crystalthedeveloper.ca": "/modules"
-        };
-
-        const newHomeLink = domainRedirects[domain] || "/user-pages/access-denied";
-        const newModulesLink = modulesRedirects[domain] || "/user-pages/access-denied";
-
-        console.log(`🔄 Updating Home links to: ${newHomeLink}`);
-        console.log(`🔄 Updating Modules links to: ${newModulesLink}`);
-
-        homeLinks.forEach(link => link.href = newHomeLink);
-        modulesLinks.forEach(link => link.href = newModulesLink);
     } catch (err) {
         console.error("Session error:", err);
         window.location.href = "/user-pages/log-in";
