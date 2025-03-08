@@ -2,16 +2,18 @@
 // Manually Confirm Emails in Supabase
 // Ensure Supabase is properly initialized in Webflow
 document.addEventListener("DOMContentLoaded", async () => {
-    const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-    const SUPABASE_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+    // Wait for Supabase to load
+    if (!window.supabaseClient) {
+        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        return;
+    }
+
+    const supabase = window.supabaseClient;
 
     if (typeof supabase === "undefined") {
         console.error("⚠️ Supabase is not defined. Make sure you include the Supabase JS SDK.");
         return;
     }
-
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // **Select Form Elements**
     const form = document.querySelector("#add-user-form");
@@ -36,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const tempPassword = "TempPass123!"; // Change if needed.
 
             // **Step 1: Create User Normally (No Admin Call)**
-            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password: tempPassword,
                 options: {
@@ -48,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log(`✅ User created in Auth: ${email}`);
 
             // **Step 2: Manually Confirm Email in Supabase**
-            const { error: confirmError } = await supabaseClient
+            const { error: confirmError } = await supabase
                 .from("auth.users")
                 .update({ email_confirmed_at: new Date().toISOString() })
                 .eq("email", email);
@@ -59,7 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // **Step 3: Insert User into users_access Table**
             const domain = email.split("@")[1];
 
-            const { error: dbError } = await supabaseClient.from("users_access").insert([
+            const { error: dbError } = await supabase.from("users_access").insert([
                 {
                     email,
                     first_name: firstName,

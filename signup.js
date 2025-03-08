@@ -1,9 +1,12 @@
 // Signup Form
 document.addEventListener("DOMContentLoaded", () => {
-  const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+  // Wait for Supabase to load
+  if (!window.supabaseClient) {
+    console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+    return;
+  }
 
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabase = window.supabaseClient;
   const signupForm = document.querySelector("#signup-form");
   const errorContainer = document.querySelector("#error-messages");
 
@@ -34,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // **Step 1: Register User with Metadata**
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {

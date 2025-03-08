@@ -1,10 +1,12 @@
 // Reset Password
 document.addEventListener("DOMContentLoaded", () => {
-    const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-    const SUPABASE_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+    // Wait for Supabase to load
+    if (!window.supabaseClient) {
+        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        return;
+    }
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = window.supabaseClient;
 
     const resetForm = document.querySelector("#reset-password-form");
     const messageContainer = document.querySelector("#message-container");
@@ -29,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Sending reset password email for:", email);
 
             // Send the reset password email
-            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: "https://firststep-46e83b.webflow.io/user-pages/update-password",
             });
 

@@ -1,4 +1,4 @@
-// Navbar Links Update for Webflow with Supabase Authentication
+// Navbar and Footer Links Update for Webflow with Supabase Authentication
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Wait for Supabase to load
@@ -11,15 +11,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Fetch the user's session
     const { data: { session } } = await supabase.auth.getSession();
-    const homeLink = document.getElementById("firststep");
-    const modulesLink = document.getElementById("modules");
     
-    if (!homeLink) {
-        console.error("❌ Navbar link with ID 'firststep' not found.");
+    const homeLinks = document.querySelectorAll("#firststep, #firststep-footer");
+    const modulesLinks = document.querySelectorAll("#modules, #modules-footer");
+    
+    if (homeLinks.length === 0) {
+        console.error("❌ Navbar or footer link with ID 'firststep' not found.");
     }
     
-    if (!modulesLink) {
-        console.error("❌ Navbar link with ID 'modules' not found.");
+    if (modulesLinks.length === 0) {
+        console.error("❌ Navbar or footer link with ID 'modules' not found.");
     }
     
     if (session && session.user) {
@@ -45,14 +46,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const newHomeLink = domainRedirects[userDomain] || "/user-pages/access-denied";
         const newModulesLink = modulesRedirects[userDomain] || "/user-pages/access-denied";
         
-        console.log(`🔄 Updating Home link to: ${newHomeLink}`);
-        console.log(`🔄 Updating Modules link to: ${newModulesLink}`);
+        console.log(`🔄 Updating Home links to: ${newHomeLink}`);
+        console.log(`🔄 Updating Modules links to: ${newModulesLink}`);
         
-        if (homeLink) homeLink.href = newHomeLink;
-        if (modulesLink) modulesLink.href = newModulesLink;
+        homeLinks.forEach(link => link.href = newHomeLink);
+        modulesLinks.forEach(link => link.href = newModulesLink);
     } else {
         console.log("👤 User not logged in. Keeping default links.");
-        if (homeLink) homeLink.href = "/"; // Default home link for non-logged-in users
-        if (modulesLink) modulesLink.href = "/modules"; // Default modules link for non-logged-in users
+        homeLinks.forEach(link => link.href = "/"); // Default home link for non-logged-in users
+        modulesLinks.forEach(link => link.href = "/modules"); // Default modules link for non-logged-in users
     }
 });

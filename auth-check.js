@@ -1,11 +1,13 @@
 //auth-check.js
 // Check for user session
 document.addEventListener("DOMContentLoaded", async () => {
-    const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-    const SUPABASE_KEY =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE";
+    // Wait for Supabase to load
+    if (!window.supabaseClient) {
+        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        return;
+    }
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = window.supabaseClient;
 
     // **Folders that require authentication**
     const protectedFolders = ["/colascanada/", "/blackandmcdonald/", "/greenshield/"];
@@ -30,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         // **Check for active session**
-        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !sessionData.session) {
             console.warn("No active session. Redirecting to login page.");
@@ -60,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // **Handle Auth State Changes (Logout/Login)**
-    supabaseClient.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
         if (session && event === "SIGNED_IN") {
             const email = session.user.email;
             const domain = email.split("@")[1]?.toLowerCase();
