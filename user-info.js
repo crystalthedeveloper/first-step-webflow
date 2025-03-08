@@ -1,4 +1,4 @@
-// Fetch the authenticated user name
+// user-info.js - Fetch and update the authenticated user's name
 document.addEventListener("DOMContentLoaded", async () => {
   // Wait for Supabase to load
   if (!window.supabaseClient) {
@@ -10,23 +10,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     // Fetch the currently logged-in user session
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError || !session) {
-      updateUserInfo("Welcome");
+      updateUserInfo("Hello, FirstStep");
       return;
     }
 
     const user = session.user;
 
-    // Retrieve the first_name from user metadata
+    // Retrieve the first and last name from user metadata
     const firstName = user.user_metadata?.first_name || "User";
-    updateUserInfo(`Welcome, ${firstName}!`);
+    const lastName = user.user_metadata?.last_name || "";
+    updateUserInfo(`Hello, ${firstName} ${lastName}`.trim());
   } catch (err) {
-    updateUserInfo("Welcome");
+    updateUserInfo("Hello, FirstStep");
   }
 
   // Function to update the #user-info element
