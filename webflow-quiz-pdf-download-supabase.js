@@ -1,5 +1,4 @@
 // webflow-quiz 
-// webflow-quiz 
 "use strict";
 
 // Create script element for jQuery
@@ -11,27 +10,29 @@ jQueryScript.onload = function () {
   // Supabase Client (ensure this script runs after Supabase is initialized)
   const supabase = window.supabaseClient;
 
-  jQuery(document).ready(async function() {
+  jQuery(document).ready(async function () {
 
-    // **Check if user is logged in and update #user-info**
+    // **Check if user is logged in and update #user-info & #certificate-name**
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
       if (user) {
-        // Fetch user metadata (first & last name)
         const firstName = user.user_metadata?.first_name || "";
         const lastName = user.user_metadata?.last_name || "";
         const fullName = `${firstName} ${lastName}`.trim();
 
         if (fullName) {
-          jQuery("#user-info").text(`${fullName}!`);
+          jQuery("#user-info").text(`Congratulations ${fullName}!`);
           jQuery("#user-info").removeClass("hidden");
+          jQuery("#certificate-name").text(fullName);
         } else {
           jQuery("#user-info").addClass("hidden");
+          jQuery("#certificate-name").text("");
         }
       } else {
         jQuery("#user-info").addClass("hidden");
+        jQuery("#certificate-name").text("");
       }
     }
 
@@ -43,29 +44,7 @@ jQueryScript.onload = function () {
       updateUserInfo();
     });
 
-    // **Function to get the current page's collection item ID**
-    function getCurrentPageCollectionItemID() {
-      var collectionItemID = jQuery('[data-collection-item-id]').data('collection-item-id');
-      return collectionItemID;
-    }
-
-    // **Event handler for quiz items**
-    jQuery('.quiz-cms-item').each(function () {
-      var $collectionItem = jQuery(this);
-      var formSubmitted = false;
-
-      // Event handler for true/false option
-      $collectionItem.find('.quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
-        if (!formSubmitted) {
-          var $this = jQuery(this);
-          var $siblings = $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false');
-          $this.find('.icon-circle').addClass('selected');
-          $siblings.find('.icon-circle').removeClass('selected');
-        }
-      });
-    });
-
-    // **Event handler for submit button**
+    // **Handle Quiz Completion & Disable Navigation**
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       var $questionItem = jQuery(".quiz-cms-item");
       var $collectionItem = jQuery(this).closest('.quiz-cms-item');
@@ -95,11 +74,13 @@ jQueryScript.onload = function () {
           });
 
           if (totalQuestions === answeredQuestions) {
-            setTimeout(function() {
+            setTimeout(function () {
               jQuery('.pass-wrap').removeClass('hide');
               jQuery('.slide-nav').addClass('hidden'); // Hide slide navigation
               jQuery('.slider-arrow-icon').addClass('hidden'); // Hide slider arrows
-              updateUserInfo(); // Ensure user info is updated when quiz is completed
+              jQuery(".quiz-cms-item").hide(); // Hide all quiz items
+              jQuery(".quiz-cms-item:first").show(); // Show only the first quiz item
+              updateUserInfo();
             }, 2000);
           }
         }
@@ -119,6 +100,9 @@ jQueryScript.onload = function () {
         if (passWrap && !passWrap.classList.contains("hide")) {
           certificateWrap.classList.remove("hide");
           certificateWrap.style.display = "block";
+
+          // Ensure the full name is added before generating PDF
+          updateUserInfo();
 
           html2pdf()
             .from(certificateContent)
