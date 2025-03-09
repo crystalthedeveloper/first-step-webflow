@@ -19,16 +19,25 @@ async function checkAuth() {
     return sessionData?.session?.user ?? null;
 }
 
-// **Toggle Video Visibility Based on Auth State**
-async function updateVideoVisibility() {
+// **Toggle Video & Button Visibility Based on Auth State**
+async function updateVisibility() {
     const user = await checkAuth();
-
+    
     if (user) {
         document.querySelectorAll(".userVideo").forEach(el => el.classList.remove("hidden"));
         document.querySelectorAll(".guestVideo").forEach(el => el.classList.add("hidden"));
+        
+        // Show quiz button for logged-in users
+        document.querySelectorAll(".quiz-button").forEach(el => el.classList.remove("hidden"));
+        document.querySelectorAll(".quiz-button-default").forEach(el => el.classList.add("hidden"));
+
     } else {
         document.querySelectorAll(".userVideo").forEach(el => el.classList.add("hidden"));
         document.querySelectorAll(".guestVideo").forEach(el => el.classList.remove("hidden"));
+        
+        // Show default quiz button for guests
+        document.querySelectorAll(".quiz-button").forEach(el => el.classList.add("hidden"));
+        document.querySelectorAll(".quiz-button-default").forEach(el => el.classList.remove("hidden"));
     }
 }
 
@@ -140,7 +149,7 @@ function loadScript(src, callback) {
 // **Initialize on DOMContentLoaded**
 document.addEventListener("DOMContentLoaded", async () => {
     disableQuizButton();  // Ensure quiz starts disabled
-    await updateVideoVisibility(); // Check user auth & update visibility
+    await updateVisibility(); // Check user auth & update visibility
 
     // Dynamically load Vimeo API and initialize players
     loadScript("https://player.vimeo.com/api/player.js", () => {
@@ -149,6 +158,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // **Watch for Auth State Changes**
     supabase.auth.onAuthStateChange((event, session) => {
-        updateVideoVisibility();
+        updateVisibility();
     });
 });
