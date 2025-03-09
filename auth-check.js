@@ -1,5 +1,4 @@
-// auth-check.js - Check for user session
-
+//auth-check.js - Check for user session
 document.addEventListener("DOMContentLoaded", async () => {
     // Wait for Supabase to load
     if (!window.supabaseClient) {
@@ -14,12 +13,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // **User access rules based on email domain**
     const domainAccess = {
-        "colascanada.ca": ["/colascanada/home", "/colascanada/modules"],
-        "gmail.com": ["/colascanada/home", "/colascanada/modules"]
-        
-        "blackandmcdonald.com": ["/blackandmcdonald/home", "/blackandmcdonald/modules"],
-        "greenshield.ca": ["/greenshield/home", "/greenshield/modules"],
-        "crystalthedeveloper.ca": "/" // Crystal gets access to homepage
+        "colascanada.ca": "/colascanada/home",
+        "gmail.com": "/colascanada/home",
+        "blackandmcdonald.com": "/blackandmcdonald/home",
+        "greenshield.ca": "/greenshield/home",
+        "crystalthedeveloper.ca": "/", // Crystal gets access to homepage
     };
 
     // **Check if the page requires authentication**
@@ -48,12 +46,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log(`User logged in: ${email} (Domain: ${domain})`);
 
         // **Check if user has access to this folder**
-        const allowedPaths = domainAccess[domain] || [];
-        const hasAccess = Array.isArray(allowedPaths) ? allowedPaths.some(path => currentPath.startsWith(path)) : currentPath.startsWith(allowedPaths);
-        
-        if (!hasAccess) {
+        const allowedPath = domainAccess[domain];
 
-        
+        if (!allowedPath || !currentPath.startsWith(allowedPath)) {
             console.warn(`Unauthorized access to ${currentPath}. Redirecting to: /access-denied`);
             window.location.href = "/access-denied";
             return;

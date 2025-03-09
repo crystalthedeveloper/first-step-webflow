@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError || !session) {
-      updateUserInfo("Hello, FirstStep");
+      updateUserInfo("FirstStep");
       return;
     }
 
@@ -22,9 +22,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Retrieve the first and last name from user metadata
     const firstName = user.user_metadata?.first_name || "User";
     const lastName = user.user_metadata?.last_name || "";
-    updateUserInfo(`Hello, ${firstName} ${lastName}`.trim());
+    updateUserInfo(`${firstName} ${lastName}`.trim());
   } catch (err) {
-    updateUserInfo("Hello, FirstStep");
+    updateUserInfo("FirstStep");
   }
 
   // Function to update the #user-info element
