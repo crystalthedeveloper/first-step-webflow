@@ -56,6 +56,22 @@ jQueryScript.onload = function () {
       $this.find('.icon-circle').addClass('selected');
     });
 
+    // **Move Slider to First Slide and Hide Arrows on Completion**
+    function moveToFirstSlide() {
+      const slider = jQuery(".w-slider");
+      if (slider.length) {
+        const firstSlide = slider.find(".w-slide:first");
+
+        // Move the slider to the first slide
+        slider.find(".w-slider-mask").css("transform", "translateX(0px)");
+
+        // Hide left and right arrows
+        jQuery(".w-icon-slider-left, .w-icon-slider-right").addClass("hidden");
+
+        console.log("✅ Slider moved to the first slide and arrows are hidden.");
+      }
+    }
+
     // **Handle Quiz Completion & Disable Navigation**
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       var $collectionItem = jQuery(this).closest('.quiz-cms-item');
@@ -89,8 +105,7 @@ jQueryScript.onload = function () {
             setTimeout(function () {
               jQuery('.pass-wrap').removeClass('hide');
               jQuery('.slide-nav, .slider-arrow-icon').addClass('hidden'); // Hide navigation
-              jQuery(".quiz-cms-item").hide(); // Hide all quiz items
-              jQuery(".quiz-cms-item:first").show(); // Show only the first quiz item
+              moveToFirstSlide(); // Move slider to first slide
               updateUserInfo();
             }, 2000);
           }
