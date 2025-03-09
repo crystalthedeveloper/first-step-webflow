@@ -11,17 +11,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     // **Folders that require authentication**
     const protectedFolders = ["/colascanada/", "/blackandmcdonald/", "/greenshield/"];
 
-    // **User access rules based on email domain**
+    // **User access rules (Multiple paths per domain)**
     const domainAccess = {
-        "colascanada.ca": "/colascanada/home",
-        "colascanada.ca": "/colascanada/modules",
-        "gmail.com": "/colascanada/home",
-        "gmail.com": "/colascanada/modules",
-        "blackandmcdonald.com": "/blackandmcdonald/home",
-        "blackandmcdonald.com": "/blackandmcdonald/modules",
-        "greenshield.ca": "/greenshield/home",
-        "greenshield.ca": "/greenshield/modules",
-        "crystalthedeveloper.ca": "/", // Crystal gets access to homepage
+        "colascanada.ca": ["/colascanada/home", "/colascanada/modules"],
+        "gmail.com": ["/colascanada/home", "/colascanada/modules"],
+        "blackandmcdonald.com": ["/blackandmcdonald/home", "/blackandmcdonald/modules"],
+        "greenshield.ca": ["/greenshield/home", "/greenshield/modules"],
+        "crystalthedeveloper.ca": ["/"], // Crystal has access to homepage
     };
 
     // **Check if the page requires authentication**
@@ -30,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!isProtected) {
         console.log("This page does not require authentication.");
-        return; // Stop script if page is public
+        return;
     }
 
     try {
@@ -49,16 +45,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         console.log(`User logged in: ${email} (Domain: ${domain})`);
 
-        // **Check if user has access to this folder**
-        const allowedPath = domainAccess[domain];
-
-        if (!allowedPath || !currentPath.startsWith(allowedPath)) {
+        // **Check if user has access**
+        const allowedPaths = domainAccess[domain] || [];
+        
+        if (!allowedPaths.some(path => currentPath.startsWith(path))) {
             console.warn(`Unauthorized access to ${currentPath}. Redirecting to: /access-denied`);
             window.location.href = "/access-denied";
             return;
         }
 
-        console.log(`Access granted to ${currentPath}`);
+        console.log(`✅ Access granted to ${currentPath}`);
     } catch (err) {
         console.error("Session error:", err);
         window.location.href = "/user-pages/log-in";
@@ -69,10 +65,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (session && event === "SIGNED_IN") {
             const email = session.user.email;
             const domain = email.split("@")[1]?.toLowerCase();
-            const allowedPath = domainAccess[domain] || "/access-denied";
+            const allowedPaths = domainAccess[domain] || [];
 
-            console.log(`Auth change detected. Redirecting user to: ${allowedPath}`);
-            window.location.href = allowedPath;
+            // Redirect to first allowed path, or access denied
+            const redirectPath = allowedPaths.length > 0 ? allowedPaths[0] : "/access-denied";
+            console.log(`Auth change detected. Redirecting user to: ${redirectPath}`);
+            window.location.href = redirectPath;
         } else if (!session) {
             console.log("User logged out. Redirecting to login.");
             window.location.href = "/user-pages/log-in";
