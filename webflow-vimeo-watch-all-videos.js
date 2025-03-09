@@ -1,4 +1,4 @@
-//webflow-vimeo-watch-all-videos
+// webflow-vimeo-watch-all-videos - local
 "use strict";
 
 // Generate a unique key for each page based on the URL
