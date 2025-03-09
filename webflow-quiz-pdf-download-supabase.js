@@ -1,4 +1,5 @@
 // webflow-quiz 
+// webflow-quiz 
 "use strict";
 
 // Create script element for jQuery
@@ -24,7 +25,7 @@ jQueryScript.onload = function () {
         const fullName = `${firstName} ${lastName}`.trim();
 
         if (fullName) {
-          jQuery("#user-info").text(`Congratulations, ${fullName}! 🎉`);
+          jQuery("#user-info").text(`${fullName}!`);
           jQuery("#user-info").removeClass("hidden");
         } else {
           jQuery("#user-info").addClass("hidden");
@@ -96,10 +97,10 @@ jQueryScript.onload = function () {
           if (totalQuestions === answeredQuestions) {
             setTimeout(function() {
               jQuery('.pass-wrap').removeClass('hide');
+              jQuery('.slide-nav').addClass('hidden'); // Hide slide navigation
+              jQuery('.slider-arrow-icon').addClass('hidden'); // Hide slider arrows
               updateUserInfo(); // Ensure user info is updated when quiz is completed
             }, 2000);
-            jQuery('.slide-nav').addClass('hide');
-            jQuery('.slider-arrow-icon').addClass('hide');
           }
         }
       }
@@ -132,6 +133,7 @@ jQueryScript.onload = function () {
         }
       });
     });
+
   });
 };
 document.head.appendChild(jQueryScript);
