@@ -3,26 +3,26 @@
 <!--webflow-quiz--->
 <script>
   "use strict";
-
+  
   // Create script element for jQuery
   var jQueryScript = document.createElement('script');
   jQueryScript.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js';
   jQueryScript.onload = function () {
     var jQuery = $.noConflict(true);
-
+  
     // Your code here
-    jQuery(document).ready(function () {
+    jQuery(document).ready(function() {
       // Function to get the current page's collection item ID
       function getCurrentPageCollectionItemID() {
         var collectionItemID = jQuery('[data-collection-item-id]').data('collection-item-id');
         return collectionItemID;
       }
-
+  
       // Event handler for quiz items
       jQuery('.quiz-cms-item').each(function () {
         var $collectionItem = jQuery(this);
         var formSubmitted = false;
-
+  
         // Event handler for true/false option
         $collectionItem.find('.quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
           if (!formSubmitted) {
@@ -33,7 +33,7 @@
           }
         });
       });
-
+  
       // Event handler for submit button
       jQuery('.quiz-cms-item .submit-answer').on('click', function () {
         var $questionItem = jQuery(".quiz-cms-item");
@@ -41,7 +41,7 @@
         var $trueOption = $collectionItem.find('.quiz-cms-link-true');
         var $falseOption = $collectionItem.find('.quiz-cms-link-false');
         var $submitButton = jQuery(this);
-
+  
         if (!$submitButton.hasClass('submitted')) {
           if ($trueOption.find('.icon-circle').hasClass('selected') || $falseOption.find('.icon-circle').hasClass('selected')) {
             $submitButton.addClass('submitted');
@@ -49,10 +49,10 @@
             $falseOption.addClass('submitted');
             $trueOption.off('click');
             $falseOption.off('click');
-
+  
             var totalQuestions = $questionItem.length;
             var answeredQuestions = jQuery('.quiz-cms-item .icon-circle.selected').length;
-
+  
             $collectionItem.find('.true-false-options-wrap').each(function () {
               var $link = jQuery(this);
               if ($link.find('.selected').find('.status').hasClass('correct')) {
@@ -62,9 +62,9 @@
                 $collectionItem.find('.wrong-wrap').removeClass('hide');
               }
             });
-
+  
             if (totalQuestions === answeredQuestions) {
-              setTimeout(function () {
+              setTimeout(function() {
                 jQuery('.pass-wrap').removeClass('hide');
               }, 2000);
               jQuery('.slide-nav').addClass('hide');
@@ -73,21 +73,21 @@
           }
         }
       });
-
+  
       // PDF Download Logic for CMS Buttons
       const cmsButtons = document.querySelectorAll(".button-primary");
       const certificateWrap = document.getElementById("certificate-wrap");
       const certificateContent = document.getElementById("certificate-content");
-
+  
       cmsButtons.forEach((button) => {
         button.addEventListener("click", (event) => {
           event.preventDefault();
-
+  
           const passWrap = button.closest(".quiz-cms-item").querySelector(".pass-wrap");
           if (passWrap && !passWrap.classList.contains("hide")) {
             certificateWrap.classList.remove("hide");
             certificateWrap.style.display = "block";
-
+  
             html2pdf()
               .from(certificateContent)
               .set({
@@ -104,4 +104,4 @@
     });
   };
   document.head.appendChild(jQueryScript);
-</script>
+  </script>
