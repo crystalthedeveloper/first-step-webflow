@@ -1,6 +1,5 @@
 // Login
 document.addEventListener("DOMContentLoaded", () => {
-    // Wait for Supabase to load
     if (!window.supabaseClient) {
         console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
@@ -28,12 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // **Step 1: Authenticate User**
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) throw error;
 
-            // **Step 2: Ensure Email is Verified**
             const { data: userSession } = await supabase.auth.getUser();
             const user = userSession?.user;
 
@@ -44,23 +41,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             console.log(`✅ User authenticated: ${user.email}`);
 
-            // **Step 3: Extract User Info**
-            const domain = email.split("@")[1]?.toLowerCase(); // Normalize domain
+            const domain = email.split("@")[1]?.toLowerCase();
             const firstName = user.user_metadata?.first_name || "Unknown";
             const lastName = user.user_metadata?.last_name || "Unknown";
 
-            // **Step 4: Check if User Exists in `users_access`**
-            const { data: userData, error: userError } = await supabase
+            const { data: userData } = await supabase
                 .from("users_access")
                 .select("id")
                 .eq("email", email)
                 .single();
 
-            // **Step 5: Insert User if Not Exists**
             if (!userData) {
                 console.log("🚀 User not found in users_access. Adding them...");
-
-                const { error: insertError } = await supabase.from("users_access").upsert([
+                await supabase.from("users_access").upsert([
                     {
                         id: user.id,
                         email,
@@ -68,21 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         last_name: lastName,
                         domain,
                         role: "user",
-                        status: "approved", // Auto-approve
+                        status: "approved",
                         created_at: new Date().toISOString(),
                     },
                 ]);
-
-                if (insertError) {
-                    console.error("❌ Error inserting into users_access:", insertError);
-                    displayError("Error saving your account. Please try again later.");
-                    return;
-                }
-            } else {
-                console.log("✅ User already exists in users_access.");
             }
 
-            // **Step 6: Redirect Based on Domain**
+            // ✅ Retrieve Last Visited Page
+            const lastVisitedPage = localStorage.getItem("lastVisitedPage");
             const domainRedirects = {
                 "gmail.com": "https://firststep-46e83b.webflow.io/colascanada/home",
                 "colascanada.ca": "https://firststep-46e83b.webflow.io/colascanada/home",
@@ -91,8 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "crystalthedeveloper.ca": "https://firststep-46e83b.webflow.io",
             };
 
-            // **Use fallback redirect if domain isn't recognized**
-            const redirectUrl = domainRedirects[domain] || "https://firststep-46e83b.webflow.io/user-pages/access-denied";
+            const redirectUrl = lastVisitedPage || domainRedirects[domain] || "https://firststep-46e83b.webflow.io/user-pages/access-denied";
 
             console.log(`🔄 Redirecting user to: ${redirectUrl}`);
 
