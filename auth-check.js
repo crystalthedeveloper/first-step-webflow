@@ -6,8 +6,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const supabase = window.supabaseClient;
-    const protectedFolders = ["/colascanada/", "/blackandmcdonald/", "/greenshield/"];
     
+    // ✅ Add protected user account page
+    const protectedFolders = ["/colascanada/", "/blackandmcdonald/", "/greenshield/", "/user-pages/user-account"];
+
     const domainAccess = {
         "colascanada.ca": ["/colascanada/home", "/colascanada/modules"],
         "gmail.com": ["/colascanada/home", "/colascanada/modules"],
@@ -35,11 +37,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const email = sessionData.session.user.email;
         const domain = email.split("@")[1]?.toLowerCase();
-
-        console.log(`User logged in: ${email} (Domain: ${domain})`);
-
         const allowedPaths = domainAccess[domain] || [];
-        
+
+        // ✅ Check access for `/user-pages/user-account`
+        if (currentPath === "/user-pages/user-account" && !sessionData.session) {
+            console.warn("User is not logged in. Redirecting to login page.");
+            window.location.href = "/user-pages/log-in";
+            return;
+        }
+
         if (!allowedPaths.some(path => currentPath.startsWith(path))) {
             console.warn(`Unauthorized access to ${currentPath}. Redirecting to: /access-denied`);
             window.location.href = "/access-denied";
