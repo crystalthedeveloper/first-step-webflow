@@ -61,7 +61,7 @@ function enableQuizButtonIfAllWatched() {
     });
 }
 
-// **Unhide Completion Elements After Watching Video**
+// **Unhide Completion Elements After Watching Video & Add Click Handlers**
 function unhideVideoComplete(videoId, chapter) {
     checkAuth().then((user) => {
         if (user) {
@@ -69,7 +69,29 @@ function unhideVideoComplete(videoId, chapter) {
         } else {
             document.querySelectorAll(`.guest_complete_${chapter}`).forEach(el => el.classList.remove("hidden"));
         }
-        enableQuizButtonIfAllWatched();
+
+        // **Attach click handlers to watched links**
+        const watchedLinks = {
+            1: { link: ".watched_link1", tab: "[data-w-tab='Tab 1']" },
+            2: { link: ".watched_link2", tab: "[data-w-tab='Tab 2']" },
+            3: null, // No link for Chapter 3, just unlocks quiz button
+        };
+
+        if (watchedLinks[chapter]) {
+            document.querySelectorAll(watchedLinks[chapter].link).forEach(link => {
+                link.classList.remove("disabled");
+                link.style.pointerEvents = "auto";
+
+                link.addEventListener("click", () => {
+                    document.querySelector(watchedLinks[chapter].tab)?.click();
+                });
+            });
+        }
+
+        // **Enable Quiz Button if Chapter 3 is completed**
+        if (chapter === 3) {
+            enableQuizButtonIfAllWatched();
+        }
     });
 }
 
