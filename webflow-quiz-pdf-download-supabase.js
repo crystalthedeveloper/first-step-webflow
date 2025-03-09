@@ -12,7 +12,7 @@ jQueryScript.onload = function () {
 
   jQuery(document).ready(async function () {
 
-    // **Check if user is logged in and update #user-info & #certificate-name**
+    // **Check if user is logged in and update all instances of #user-info & #certificate-name**
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -23,16 +23,18 @@ jQueryScript.onload = function () {
         const fullName = `${firstName} ${lastName}`.trim();
 
         if (fullName) {
-          jQuery("#user-info").text(`Congratulations ${fullName}!`);
-          jQuery("#user-info").removeClass("hidden");
           jQuery("#certificate-name").text(fullName);
+
+          // Update all elements with the class "congratulation-name" on every slide
+          jQuery(".congratulation-name").each(function () {
+            jQuery(this).text(fullName);
+          });
+
         } else {
-          jQuery("#user-info").addClass("hidden");
-          jQuery("#certificate-name").text("");
+          jQuery(".congratulation-name, #certificate-name").text("User");
         }
       } else {
-        jQuery("#user-info").addClass("hidden");
-        jQuery("#certificate-name").text("");
+        jQuery(".congratulation-name, #certificate-name").text("User");
       }
     }
 
@@ -60,8 +62,6 @@ jQueryScript.onload = function () {
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
-        const firstSlide = slider.find(".w-slide:first");
-
         // Move the slider to the first slide
         slider.find(".w-slider-mask").css("transform", "translateX(0px)");
 
@@ -106,7 +106,7 @@ jQueryScript.onload = function () {
               jQuery('.pass-wrap').removeClass('hide');
               jQuery('.slide-nav, .slider-arrow-icon').addClass('hidden'); // Hide navigation
               moveToFirstSlide(); // Move slider to first slide
-              updateUserInfo();
+              updateUserInfo(); // Ensure full name is updated
             }, 2000);
           }
         }
