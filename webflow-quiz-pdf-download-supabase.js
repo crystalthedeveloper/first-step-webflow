@@ -44,9 +44,20 @@ jQueryScript.onload = function () {
       updateUserInfo();
     });
 
+    // **Allow Clicking True/False Again**
+    jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
+      var $this = jQuery(this);
+      var $siblings = $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false');
+
+      // Remove selection from the other option
+      $siblings.find('.icon-circle').removeClass('selected');
+
+      // Add selection to the clicked option
+      $this.find('.icon-circle').addClass('selected');
+    });
+
     // **Handle Quiz Completion & Disable Navigation**
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
-      var $questionItem = jQuery(".quiz-cms-item");
       var $collectionItem = jQuery(this).closest('.quiz-cms-item');
       var $trueOption = $collectionItem.find('.quiz-cms-link-true');
       var $falseOption = $collectionItem.find('.quiz-cms-link-false');
@@ -55,29 +66,29 @@ jQueryScript.onload = function () {
       if (!$submitButton.hasClass('submitted')) {
         if ($trueOption.find('.icon-circle').hasClass('selected') || $falseOption.find('.icon-circle').hasClass('selected')) {
           $submitButton.addClass('submitted');
-          $trueOption.addClass('submitted');
-          $falseOption.addClass('submitted');
-          $trueOption.off('click');
-          $falseOption.off('click');
 
-          var totalQuestions = $questionItem.length;
+          var totalQuestions = jQuery(".quiz-cms-item").length;
           var answeredQuestions = jQuery('.quiz-cms-item .icon-circle.selected').length;
 
+          // Mark answers
           $collectionItem.find('.true-false-options-wrap').each(function () {
             var $link = jQuery(this);
-            if ($link.find('.selected').find('.status').hasClass('correct')) {
+            if ($link.find('.selected .status').hasClass('correct')) {
               $link.find('.icon-circle').addClass('answer-true');
-            } else if ($link.find('.selected').find('.status').hasClass('incorrect')) {
+            } else {
               $link.find('.icon-circle').addClass('answer-false');
               $collectionItem.find('.wrong-wrap').removeClass('hide');
             }
           });
 
+          // **Disable Clicking After Submission**
+          $trueOption.addClass('submitted').off('click');
+          $falseOption.addClass('submitted').off('click');
+
           if (totalQuestions === answeredQuestions) {
             setTimeout(function () {
               jQuery('.pass-wrap').removeClass('hide');
-              jQuery('.slide-nav').addClass('hidden'); // Hide slide navigation
-              jQuery('.slider-arrow-icon').addClass('hidden'); // Hide slider arrows
+              jQuery('.slide-nav, .slider-arrow-icon').addClass('hidden'); // Hide navigation
               jQuery(".quiz-cms-item").hide(); // Hide all quiz items
               jQuery(".quiz-cms-item:first").show(); // Show only the first quiz item
               updateUserInfo();
