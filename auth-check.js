@@ -14,9 +14,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     // **User access rules based on email domain**
     const domainAccess = {
         "colascanada.ca": "/colascanada/home",
+        "colascanada.ca": "/colascanada/modules",
         "gmail.com": "/colascanada/home",
+        "gmail.com": "/colascanada/modules",
         "blackandmcdonald.com": "/blackandmcdonald/home",
+        "blackandmcdonald.com": "/blackandmcdonald/modules",
         "greenshield.ca": "/greenshield/home",
+        "greenshield.ca": "/greenshield/modules",
         "crystalthedeveloper.ca": "/", // Crystal gets access to homepage
     };
 
