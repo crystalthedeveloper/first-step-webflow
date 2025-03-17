@@ -36,6 +36,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 let errorMessages = [];
 
                 try {
+                    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+                    if (sessionError || !sessionData.session) {
+                        messageBox.textContent = "❌ You must be logged in to upload users.";
+                        return;
+                    }
+
                     for (const user of users) {
                         const tempPassword = "TempPass123!"; // Default password
 
