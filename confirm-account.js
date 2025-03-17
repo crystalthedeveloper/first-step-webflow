@@ -8,20 +8,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     const supabase = window.supabaseClient;
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
-    const email = urlParams.get("email");
     const confirmationMessage = document.querySelector("#confirmation-message");
 
-    if (!token || !email) {
+    if (!token) {
         confirmationMessage.textContent = "❌ Invalid confirmation link.";
         return;
     }
 
-    // ✅ Step 1: Confirm user in Supabase
     try {
+        // ✅ Step 1: Verify Token
         const { error } = await supabase.auth.verifyOtp({
             type: "signup",
-            token,
-            email
+            token
         });
 
         if (error) {
@@ -29,27 +27,41 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        // ✅ Step 2: Check if user exists in `users_access`
-        const { data: existingUser } = await supabase
+        // ✅ Step 2: Fetch the authenticated user
+        const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
+        if (sessionError || !sessionData?.user?.email) {
+            confirmationMessage.textContent = "❌ Could not retrieve user.";
+            return;
+        }
+
+        const email = sessionData.user.email; // ✅ Get user's email after verification
+
+        // ✅ Step 3: Check if user exists in `users_access`
+        const { data: existingUser, error: fetchError } = await supabase
             .from("users_access")
             .select("email")
             .eq("email", email)
             .single();
 
         if (!existingUser) {
-            // ✅ Step 3: Insert into `users_access`
-            await supabase.from("users_access").insert([
+            // ✅ Step 4: Insert into `users_access`
+            const { error: insertError } = await supabase.from("users_access").insert([
                 {
                     email: email,
-                    first_name: "New", // Default name if missing
-                    last_name: "User",
+                    first_name: sessionData.user.user_metadata?.first_name || "New",
+                    last_name: sessionData.user.user_metadata?.last_name || "User",
                     status: "approved",
                     created_at: new Date().toISOString()
                 }
             ]);
+
+            if (insertError) {
+                confirmationMessage.textContent = "❌ Error adding user to database.";
+                return;
+            }
         }
 
-        // ✅ Step 4: Success Message & Redirect
+        // ✅ Step 5: Success Message & Redirect
         confirmationMessage.textContent = "✅ Confirmation successful! Redirecting...";
         setTimeout(() => {
             window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
