@@ -1,14 +1,13 @@
 // upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
-        updateErrorMessage(" Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        updateErrorMessage("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
     }
 
     const supabase = window.supabaseClient;
     const messageBox = document.querySelector("#csv-upload-message");
     const errorBox = document.querySelector("#error-message");
-    const approveAllBtn = document.querySelector("#approve-all-btn");
 
     /** ===== CSV UPLOAD FORM ===== **/
     const uploadForm = document.querySelector("#csv-upload-form");
@@ -21,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             errorBox.textContent = ""; // Clear errors
 
             if (!fileInput.files.length) {
-                messageBox.textContent = " Please select a CSV file.";
+                messageBox.textContent = "Please select a CSV file.";
                 return;
             }
 
@@ -33,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const users = parseCSV(csvData);
 
                 if (users.length === 0) {
-                    messageBox.textContent = " Invalid CSV file.";
+                    messageBox.textContent = "Invalid CSV file.";
                     return;
                 }
 
@@ -45,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     fileInput.value = ""; // Reset file input
                     window.fetchPendingUsers(); // Refresh pending users list
                 } catch (err) {
-                    updateErrorMessage(" Error uploading CSV: " + err.message);
+                    updateErrorMessage("Error uploading CSV: " + err.message);
                 }
             };
 
@@ -80,6 +79,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     /** ===== FETCH PENDING USERS (Attach to Window) ===== **/
     window.fetchPendingUsers = async function () {
         const userList = document.querySelector("#pending-users-list");
+        const approveAllBtn = document.querySelector("#approve-all-btn"); // Get button again
+
         if (!userList) return;
 
         userList.innerHTML = "Loading users...";
@@ -112,12 +113,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             approveAllBtn.style.display = "block"; // Show Approve All Button
         } catch (err) {
-            updateErrorMessage(" Failed to load users: " + err.message);
+            updateErrorMessage("Failed to load users: " + err.message);
         }
     };
 
     /** ===== APPROVE ALL USERS FUNCTION (Batch Update) ===== **/
-    async function approveAllUsers() {
+    async function approveAllUsers(event) {
+        event.preventDefault(); // Prevents page reload
+
+        const approveAllBtn = document.querySelector("#approve-all-btn"); // Ensure button exists
+
         try {
             // Fetch all pending users
             const { data: users, error: fetchError } = await supabase
@@ -127,7 +132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (fetchError) throw fetchError;
             if (!users || users.length === 0) {
-                updateErrorMessage(" No pending users to approve.");
+                updateErrorMessage("No pending users to approve.");
                 return;
             }
 
@@ -149,21 +154,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 if (authError) {
-                    console.error(` Error creating auth for ${email}:`, authError);
+                    console.error(`Error creating auth for ${email}:`, authError);
                 } else {
                     console.log(`User approved and added to auth: ${email}`);
                 }
             }
 
-            // Refresh the list after approval
+            // Hide "Approve All" button & Refresh pending users list
+            approveAllBtn.style.display = "none";
             window.fetchPendingUsers();
         } catch (err) {
-            updateErrorMessage(" Error approving users: " + err.message);
+            updateErrorMessage("Error approving users: " + err.message);
         }
     }
 
-    // Attach Approve All function to button
-    approveAllBtn.addEventListener("click", approveAllUsers);
+    // Attach Approve All function to button click
+    document.querySelector("#approve-all-btn").addEventListener("click", approveAllUsers);
 
     // Load pending users on page load
     window.fetchPendingUsers();
