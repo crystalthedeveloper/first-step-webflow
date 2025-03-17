@@ -1,8 +1,7 @@
 // Signup Form
 document.addEventListener("DOMContentLoaded", () => {
-  // Wait for Supabase to load
   if (!window.supabaseClient) {
-    console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+    console.error("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
     return;
   }
 
@@ -36,21 +35,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      // **Step 1: Register User with Metadata**
+      // **Step 1: Register User in Supabase Auth**
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName
-          }
+          data: { first_name: firstName, last_name: lastName }
         }
       });
 
       if (error) throw error;
 
-      // **Step 2: Redirect User**
+      // **Step 2: Add User to `users_access` as "pending"**
+      console.log(`User signed up: ${email}`);
+      await supabase.from("users_access").upsert([
+        {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          status: "pending", // Pending until they confirm email
+          created_at: new Date().toISOString(),
+        }
+      ]);
+
+      // **Step 3: Redirect to login page**
       errorContainer.textContent = "Signup successful! Check your email to verify your account.";
       errorContainer.style.color = "green";
 
