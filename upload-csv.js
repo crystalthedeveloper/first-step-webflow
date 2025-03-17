@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     messageBox.textContent = "✅ CSV uploaded successfully!";
                     fileInput.value = ""; // Reset file input
-                    fetchPendingUsers(); // ✅ Refresh pending users list
+                    window.fetchPendingUsers(); // ✅ Ensure this function is accessible
                 } catch (err) {
                     updateErrorMessage("❌ Error uploading CSV: " + err.message);
                 }
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /** ===== FUNCTION: Show Errors on Webflow ===== **/
+    /** ===== FUNCTION: Show Errors on Webflow UI ===== **/
     function updateErrorMessage(message) {
         errorBox.textContent = message;
         console.error(message);
@@ -76,8 +76,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             .filter(Boolean);
     }
 
-    /** ===== FETCH PENDING USERS (Show Errors) ===== **/
-    async function fetchPendingUsers() {
+    /** ===== ✅ FETCH PENDING USERS (Attach to Window) ===== **/
+    window.fetchPendingUsers = async function () {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
 
@@ -109,15 +109,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 .join("");
 
             document.querySelectorAll(".approve-btn").forEach((btn) =>
-                btn.addEventListener("click", (e) => approveUser(e.target.dataset.email))
+                btn.addEventListener("click", (e) => window.approveUser(e.target.dataset.email))
             );
         } catch (err) {
             updateErrorMessage("❌ Failed to load users: " + err.message);
         }
-    }
+    };
 
-    /** ===== APPROVE USER FUNCTION (Show Errors) ===== **/
-    async function approveUser(email) {
+    /** ===== ✅ APPROVE USER FUNCTION (Attach to Window) ===== **/
+    window.approveUser = async function (email) {
         try {
             // Step 1: Update status to "approved"
             const { error: updateError } = await supabase
@@ -138,13 +138,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log(`✅ User approved: ${email}`);
 
             // Refresh the list
-            fetchPendingUsers();
+            window.fetchPendingUsers();
         } catch (err) {
             updateErrorMessage("❌ Error approving user: " + err.message);
         }
-    }
+    };
 
-    // Load pending users on page load
-    fetchPendingUsers();
-    setInterval(fetchPendingUsers, 30000); // Auto-refresh list every 30 seconds
+    // ✅ Load pending users on page load
+    window.fetchPendingUsers();
+    setInterval(window.fetchPendingUsers, 30000); // Auto-refresh list every 30 seconds
 });
