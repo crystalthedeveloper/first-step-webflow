@@ -1,7 +1,7 @@
 // upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
-        document.querySelector("#csv-upload-message").textContent = "Supabase Client not found!";
+        document.querySelector("#csv-upload-message").textContent = "❌ Supabase Client not found!";
         return;
     }
 
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             messageBox.textContent = "🔄 Uploading...";
 
             if (!fileInput.files.length) {
-                messageBox.textContent = "Please select a CSV file.";
+                messageBox.textContent = "❌ Please select a CSV file.";
                 return;
             }
 
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const users = parseCSV(csvData);
 
                 if (users.length === 0) {
-                    messageBox.textContent = "Invalid CSV file.";
+                    messageBox.textContent = "❌ Invalid CSV file.";
                     return;
                 }
 
@@ -36,53 +36,31 @@ document.addEventListener("DOMContentLoaded", async () => {
                 let errorMessages = [];
 
                 try {
-                    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-                    if (sessionError || !sessionData.session) {
-                        messageBox.textContent = "You must be logged in to upload users.";
-                        return;
-                    }
-
                     for (const user of users) {
-                        const tempPassword = "TempPass123!"; // Default password
-
-                        // Step 1: Create user in Supabase Auth with password
-                        const { error: authError } = await supabase.auth.admin.createUser({
-                            email: user.email,
-                            password: tempPassword,
-                            email_confirm: true,  // Automatically confirm email
-                            user_metadata: {
-                                first_name: user.first_name,
-                                last_name: user.last_name
-                            }
-                        });
-
-                        if (authError) {
-                            errorMessages.push(`${user.email}: ${authError.message}`);
-                            continue; // Skip inserting into the table if Auth fails
-                        }
-
-                        // Step 2: Insert user into `users_access` table
+                        // Insert user into `users_access`
                         const { error: dbError } = await supabase.from("users_access").insert([
                             {
                                 email: user.email,
                                 first_name: user.first_name,
                                 last_name: user.last_name,
-                                status: "approved",
+                                role: "user", // Default role
+                                domain: user.email.split("@")[1], // Extract domain from email
+                                status: "pre-approved", // Users need to be approved later
                                 created_at: new Date().toISOString(),
                             }
                         ]);
 
                         if (dbError) {
-                            errorMessages.push(`${user.email}: Database error - ${dbError.message}`);
+                            errorMessages.push(`❌ ${user.email}: ${dbError.message}`);
                             continue;
                         }
 
                         successCount++;
                     }
 
-                    // Update UI message
+                    // ✅ Update UI message
                     if (successCount > 0) {
-                        messageBox.innerHTML = `${successCount} users uploaded successfully! Users can log in now.`;
+                        messageBox.innerHTML = `✅ ${successCount} users uploaded successfully!`;
                     }
                     if (errorMessages.length > 0) {
                         messageBox.innerHTML += `<br><br>${errorMessages.join("<br>")}`;
@@ -91,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     fileInput.value = ""; // Reset file input
                     fetchUsers(); // Refresh user list
                 } catch (err) {
-                    messageBox.textContent = "Error uploading CSV: " + err.message;
+                    messageBox.textContent = "❌ Error uploading CSV: " + err.message;
                 }
             };
 
@@ -99,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /** FUNCTION: Parse CSV Data **/
+    /** ✅ FUNCTION: Parse CSV Data **/
     function parseCSV(csv) {
         const rows = csv.split("\n").slice(1);
         return rows
@@ -115,7 +93,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .filter(Boolean);
     }
 
-    /** FUNCTION: Fetch Users from `users_access` **/
+    /** ✅ FUNCTION: Fetch Users from `users_access` **/
     async function fetchUsers() {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
@@ -125,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const { data: users, error } = await supabase
                 .from("users_access")
-                .select("first_name, last_name, email");
+                .select("first_name, last_name, email, status");
 
             if (error) throw error;
 
@@ -138,15 +116,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 .map(
                     (user) => `
                     <div class="user-row">
-                        <p>${user.first_name} ${user.last_name} (${user.email})</p>
+                        <p>${user.first_name} ${user.last_name} (${user.email}) - <strong>${user.status}</strong></p>
                     </div>
                 `
                 )
                 .join("");
         } catch (err) {
-            userList.innerHTML = "Failed to load users.";
+            userList.innerHTML = "❌ Failed to load users.";
         }
     }
 
-    fetchUsers(); // Load users on page load
+    fetchUsers(); // ✅ Load users on page load
 });
