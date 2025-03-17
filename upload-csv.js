@@ -1,4 +1,3 @@
-// upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
         console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
@@ -6,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const supabase = window.supabaseClient;
-    
+
     /** ===== CSV UPLOAD FORM ===== **/
     const uploadForm = document.querySelector("#csv-upload-form");
     const fileInput = document.querySelector("#csv-upload");
@@ -40,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     messageBox.textContent = "✅ CSV uploaded successfully!";
                     fileInput.value = ""; // Reset file input
-                    fetchPendingUsers(); // Refresh user list
+                    window.fetchPendingUsers(); // ✅ Ensure this function is accessible
                 } catch (err) {
                     console.error(err);
                     messageBox.textContent = "❌ Error uploading CSV.";
@@ -69,47 +68,48 @@ document.addEventListener("DOMContentLoaded", async () => {
             .filter(Boolean);
     }
 
-    /** ===== FETCH PENDING USERS ===== **/
-    async function fetchPendingUsers() {
+    /** ===== FETCH PENDING USERS (Make Global) ===== **/
+    window.fetchPendingUsers = async function () {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
 
         userList.innerHTML = "Loading users...";
 
-        const { data: users, error } = await supabase
-            .from("users_access")
-            .select("*")
-            .eq("status", "pre-approved");
+        try {
+            const { data: users, error } = await supabase
+                .from("users_access")
+                .select("*")
+                .eq("status", "pre-approved");
 
-        if (error) {
-            console.error(error);
+            if (error) throw error;
+
+            if (!users.length) {
+                userList.innerHTML = "✅ No pending users.";
+                return;
+            }
+
+            userList.innerHTML = users
+                .map(
+                    (user) => `
+                <div class="user-row">
+                    <p>${user.first_name} ${user.last_name} (${user.email})</p>
+                    <button class="approve-btn" data-email="${user.email}">Approve</button>
+                </div>
+            `
+                )
+                .join("");
+
+            document.querySelectorAll(".approve-btn").forEach((btn) =>
+                btn.addEventListener("click", (e) => window.approveUser(e.target.dataset.email))
+            );
+        } catch (err) {
+            console.error("❌ Error fetching users:", err.message);
             userList.innerHTML = "❌ Error loading users.";
-            return;
         }
+    };
 
-        if (!users.length) {
-            userList.innerHTML = "✅ No pending users.";
-            return;
-        }
-
-        userList.innerHTML = users
-            .map(
-                (user) => `
-            <div class="user-row">
-                <p>${user.first_name} ${user.last_name} (${user.email})</p>
-                <button class="approve-btn" data-email="${user.email}">Approve</button>
-            </div>
-        `
-            )
-            .join("");
-
-        document.querySelectorAll(".approve-btn").forEach((btn) =>
-            btn.addEventListener("click", (e) => approveUser(e.target.dataset.email))
-        );
-    }
-
-    /** ===== APPROVE USER FUNCTION ===== **/
-    async function approveUser(email) {
+    /** ===== APPROVE USER FUNCTION (Make Global) ===== **/
+    window.approveUser = async function (email) {
         const tempPassword = "TempPass123!"; // You can generate a random password instead
 
         try {
@@ -132,12 +132,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log(`✅ User approved: ${email}`);
 
             // Refresh the list to remove the approved user
-            fetchPendingUsers();
+            window.fetchPendingUsers();
         } catch (err) {
             console.error("❌ Error approving user:", err.message);
         }
-    }
+    };
 
-    fetchPendingUsers(); // Load pending users when the page loads
-    setInterval(fetchPendingUsers, 30000); // Auto-refresh list every 30 seconds
+    // Load pending users on page load
+    window.fetchPendingUsers();
+    setInterval(window.fetchPendingUsers, 30000); // Auto-refresh list every 30 seconds
 });
