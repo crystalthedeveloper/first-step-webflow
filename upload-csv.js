@@ -1,20 +1,23 @@
+// upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
-        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        updateErrorMessage("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
     }
 
     const supabase = window.supabaseClient;
+    const messageBox = document.querySelector("#csv-upload-message");
+    const errorBox = document.querySelector("#error-message");
 
     /** ===== CSV UPLOAD FORM ===== **/
     const uploadForm = document.querySelector("#csv-upload-form");
     const fileInput = document.querySelector("#csv-upload");
-    const messageBox = document.querySelector("#csv-upload-message");
 
     if (uploadForm) {
         uploadForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             messageBox.textContent = "Uploading...";
+            errorBox.textContent = ""; // Clear errors
 
             if (!fileInput.files.length) {
                 messageBox.textContent = "❌ Please select a CSV file.";
@@ -39,15 +42,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     messageBox.textContent = "✅ CSV uploaded successfully!";
                     fileInput.value = ""; // Reset file input
-                    window.fetchPendingUsers(); // ✅ Ensure this function is accessible
+                    fetchPendingUsers(); // ✅ Refresh pending users list
                 } catch (err) {
-                    console.error(err);
-                    messageBox.textContent = "❌ Error uploading CSV.";
+                    updateErrorMessage("❌ Error uploading CSV: " + err.message);
                 }
             };
 
             reader.readAsText(file);
         });
+    }
+
+    /** ===== FUNCTION: Show Errors on Webflow ===== **/
+    function updateErrorMessage(message) {
+        errorBox.textContent = message;
+        console.error(message);
     }
 
     /** ===== FUNCTION: Parse CSV Data ===== **/
@@ -68,12 +76,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             .filter(Boolean);
     }
 
-    /** ===== FETCH PENDING USERS (Make Global) ===== **/
-    window.fetchPendingUsers = async function () {
+    /** ===== FETCH PENDING USERS (Show Errors) ===== **/
+    async function fetchPendingUsers() {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
 
         userList.innerHTML = "Loading users...";
+        errorBox.textContent = ""; // Clear errors
 
         try {
             const { data: users, error } = await supabase
@@ -83,7 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (error) throw error;
 
-            if (!users.length) {
+            if (!users || users.length === 0) {
                 userList.innerHTML = "✅ No pending users.";
                 return;
             }
@@ -91,27 +100,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             userList.innerHTML = users
                 .map(
                     (user) => `
-                <div class="user-row">
-                    <p>${user.first_name} ${user.last_name} (${user.email})</p>
-                    <button class="approve-btn" data-email="${user.email}">Approve</button>
-                </div>
-            `
+                    <div class="user-row">
+                        <p>${user.first_name} ${user.last_name} (${user.email})</p>
+                        <button class="approve-btn" data-email="${user.email}">Approve</button>
+                    </div>
+                `
                 )
                 .join("");
 
             document.querySelectorAll(".approve-btn").forEach((btn) =>
-                btn.addEventListener("click", (e) => window.approveUser(e.target.dataset.email))
+                btn.addEventListener("click", (e) => approveUser(e.target.dataset.email))
             );
         } catch (err) {
-            console.error("❌ Error fetching users:", err.message);
-            userList.innerHTML = "❌ Error loading users.";
+            updateErrorMessage("❌ Failed to load users: " + err.message);
         }
-    };
+    }
 
-    /** ===== APPROVE USER FUNCTION (Make Global) ===== **/
-    window.approveUser = async function (email) {
-        const tempPassword = "TempPass123!"; // You can generate a random password instead
-
+    /** ===== APPROVE USER FUNCTION (Show Errors) ===== **/
+    async function approveUser(email) {
         try {
             // Step 1: Update status to "approved"
             const { error: updateError } = await supabase
@@ -121,24 +127,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (updateError) throw updateError;
 
-            // Step 2: Create user in Supabase Auth with temp password
+            // Step 2: Create user in Supabase Auth
             const { error: authError } = await supabase.auth.signUp({
                 email,
-                password: tempPassword,
+                password: "TempPass123!", // You can generate a random password
             });
 
             if (authError) throw authError;
 
             console.log(`✅ User approved: ${email}`);
 
-            // Refresh the list to remove the approved user
-            window.fetchPendingUsers();
+            // Refresh the list
+            fetchPendingUsers();
         } catch (err) {
-            console.error("❌ Error approving user:", err.message);
+            updateErrorMessage("❌ Error approving user: " + err.message);
         }
-    };
+    }
 
     // Load pending users on page load
-    window.fetchPendingUsers();
-    setInterval(window.fetchPendingUsers, 30000); // Auto-refresh list every 30 seconds
+    fetchPendingUsers();
+    setInterval(fetchPendingUsers, 30000); // Auto-refresh list every 30 seconds
 });
