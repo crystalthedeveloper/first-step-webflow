@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (uploadForm) {
         uploadForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            messageBox.textContent = "Uploading...";
+            messageBox.textContent = "🔄 Uploading...";
 
             if (!fileInput.files.length) {
                 messageBox.textContent = "Please select a CSV file.";
@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     messageBox.textContent = "CSV uploaded successfully!";
                     fileInput.value = ""; // Reset file input
+                    fetchPendingUsers(); // Refresh pending users list
                 } catch (err) {
                     messageBox.textContent = "Error uploading CSV: " + err.message;
                 }
@@ -55,6 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .map((row) => {
                 const [email, firstName, lastName] = row.split(",");
                 if (!email || !firstName || !lastName) return null;
+
                 return {
                     email: email.trim(),
                     first_name: firstName.trim(),
@@ -65,4 +67,42 @@ document.addEventListener("DOMContentLoaded", async () => {
             })
             .filter(Boolean);
     }
+
+    /** ===== FUNCTION: Fetch & Display Pending Users (No Approve Button) ===== **/
+    async function fetchPendingUsers() {
+        const userList = document.querySelector("#pending-users-list");
+        if (!userList) return;
+
+        userList.innerHTML = "🔄 Loading pending users...";
+
+        try {
+            const { data: users, error } = await supabase
+                .from("users_access")
+                .select("first_name, last_name, email")
+                .eq("status", "pending");
+
+            if (error) throw error;
+
+            if (!users || users.length === 0) {
+                userList.innerHTML = "No pending users.";
+                return;
+            }
+
+            // Display pending users list only (No Approve button)
+            userList.innerHTML = users
+                .map(
+                    (user) => `
+                    <div class="user-row">
+                        <p>${user.first_name} ${user.last_name} (${user.email})</p>
+                    </div>
+                `
+                )
+                .join("");
+        } catch (err) {
+            console.error("Error fetching users:", err);
+            userList.innerHTML = "Failed to load users.";
+        }
+    }
+
+    fetchPendingUsers(); // Load pending users on page load
 });
