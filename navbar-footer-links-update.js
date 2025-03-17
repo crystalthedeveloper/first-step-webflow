@@ -3,7 +3,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
     // Wait for Supabase to load
     if (!window.supabaseClient) {
-        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        console.error("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
     }
 
@@ -16,11 +16,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const modulesLinks = document.querySelectorAll("#modules, #modules-footer");
     
     if (homeLinks.length === 0) {
-        console.error("❌ Navbar or footer link with ID 'firststep' not found.");
+        console.error("Navbar or footer link with ID 'firststep' not found.");
     }
     
     if (modulesLinks.length === 0) {
-        console.error("❌ Navbar or footer link with ID 'modules' not found.");
+        console.error("Navbar or footer link with ID 'modules' not found.");
     }
     
     if (session && session.user) {

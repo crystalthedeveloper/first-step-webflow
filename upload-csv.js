@@ -1,7 +1,7 @@
 // upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
-        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        console.error("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
     }
 
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             messageBox.textContent = "🔄 Uploading...";
 
             if (!fileInput.files.length) {
-                messageBox.textContent = "❌ Please select a CSV file.";
+                messageBox.textContent = "Please select a CSV file.";
                 return;
             }
 
@@ -28,23 +28,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const users = parseCSV(csvData);
 
                 if (users.length === 0) {
-                    messageBox.textContent = "❌ Invalid CSV file.";
+                    messageBox.textContent = "Invalid CSV file.";
                     return;
                 }
 
                 try {
-                    console.log("📤 Uploading users to Supabase...", users); // Debug log
-                    
                     // Insert users with "pending" status
                     const { error } = await supabase.from("users_access").insert(users);
                     if (error) throw error;
 
-                    messageBox.textContent = "✅ CSV uploaded successfully!";
+                    messageBox.textContent = "CSV uploaded successfully!";
                     fileInput.value = ""; // Reset file input
                     fetchPendingUsers(); // Refresh pending users list
                 } catch (err) {
-                    console.error("❌ Error uploading CSV:", err);
-                    messageBox.textContent = "❌ Error uploading CSV: " + err.message;
+                    messageBox.textContent = "Error uploading CSV: " + err.message;
                 }
             };
 
@@ -52,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /** ✅ FUNCTION: Parse CSV Data **/
+    /** FUNCTION: Parse CSV Data **/
     function parseCSV(csv) {
         const rows = csv.split("\n").slice(1);
         return rows
@@ -71,7 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .filter(Boolean);
     }
 
-    /** ✅ FUNCTION: Fetch & Display Pending Users (No Approve Button) **/
+    /** FUNCTION: Fetch & Display Pending Users (No Approve Button) **/
     async function fetchPendingUsers() {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
@@ -81,12 +78,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const { data: users, error } = await supabase
                 .from("users_access")
-                .select("id, first_name, last_name, email, status")
+                .select("first_name, last_name, email")
                 .eq("status", "pending");
 
             if (error) throw error;
-
-            console.log("✅ Supabase returned:", users); // Debug log to check data
 
             if (!users || users.length === 0) {
                 userList.innerHTML = "No pending users.";
@@ -104,10 +99,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 )
                 .join("");
         } catch (err) {
-            console.error("❌ Error fetching users:", err);
-            userList.innerHTML = "❌ Failed to load users.";
+            userList.innerHTML = "Failed to load users.";
         }
     }
 
-    fetchPendingUsers(); // ✅ Load pending users when page loads
+    fetchPendingUsers();
 });
