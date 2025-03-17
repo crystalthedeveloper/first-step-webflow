@@ -1,7 +1,7 @@
 // upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
-        console.error("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
     }
 
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             messageBox.textContent = "🔄 Uploading...";
 
             if (!fileInput.files.length) {
-                messageBox.textContent = "Please select a CSV file.";
+                messageBox.textContent = "❌ Please select a CSV file.";
                 return;
             }
 
@@ -28,20 +28,51 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const users = parseCSV(csvData);
 
                 if (users.length === 0) {
-                    messageBox.textContent = "Invalid CSV file.";
+                    messageBox.textContent = "❌ Invalid CSV file.";
                     return;
                 }
 
                 try {
-                    // Insert users with "pending" status
-                    const { error } = await supabase.from("users_access").insert(users);
-                    if (error) throw error;
+                    for (const user of users) {
+                        // ✅ Step 1: Use a fixed password for all users
+                        const tempPassword = "TempPass123!";
 
-                    messageBox.textContent = "CSV uploaded successfully!";
+                        // ✅ Step 2: Create user in Supabase Authentication
+                        const { error: authError } = await supabase.auth.signUp({
+                            email: user.email,
+                            password: tempPassword,
+                            options: {
+                                data: {
+                                    first_name: user.first_name,
+                                    last_name: user.last_name
+                                }
+                            }
+                        });
+
+                        if (authError) {
+                            console.error(`❌ Error creating user in Auth: ${authError.message}`);
+                            continue; // Skip inserting if Auth fails
+                        }
+
+                        // ✅ Step 3: Insert into `users_access` table
+                        await supabase.from("users_access").insert([
+                            {
+                                email: user.email,
+                                first_name: user.first_name,
+                                last_name: user.last_name,
+                                status: "approved", // Automatically approved
+                                created_at: new Date().toISOString(),
+                            }
+                        ]);
+
+                        console.log(`✅ User created: ${user.email}, Password: ${tempPassword}`);
+                    }
+
+                    messageBox.textContent = "✅ CSV uploaded successfully! Users can log in now.";
                     fileInput.value = ""; // Reset file input
-                    fetchPendingUsers(); // Refresh pending users list
+                    fetchUsers(); // Refresh user list
                 } catch (err) {
-                    messageBox.textContent = "Error uploading CSV: " + err.message;
+                    messageBox.textContent = "❌ Error uploading CSV: " + err.message;
                 }
             };
 
@@ -49,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /** FUNCTION: Parse CSV Data **/
+    /** ✅ FUNCTION: Parse CSV Data **/
     function parseCSV(csv) {
         const rows = csv.split("\n").slice(1);
         return rows
@@ -61,34 +92,30 @@ document.addEventListener("DOMContentLoaded", async () => {
                     email: email.trim(),
                     first_name: firstName.trim(),
                     last_name: lastName.trim(),
-                    status: "pending", // Users start as "pending"
-                    created_at: new Date().toISOString(),
                 };
             })
             .filter(Boolean);
     }
 
-    /** FUNCTION: Fetch & Display Pending Users (No Approve Button) **/
-    async function fetchPendingUsers() {
+    /** ✅ FUNCTION: Fetch Users from `users_access` **/
+    async function fetchUsers() {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
 
-        userList.innerHTML = "🔄 Loading pending users...";
+        userList.innerHTML = "🔄 Loading users...";
 
         try {
             const { data: users, error } = await supabase
                 .from("users_access")
-                .select("first_name, last_name, email")
-                .eq("status", "pending");
+                .select("first_name, last_name, email");
 
             if (error) throw error;
 
             if (!users || users.length === 0) {
-                userList.innerHTML = "No pending users.";
+                userList.innerHTML = "No users found.";
                 return;
             }
 
-            // Display pending users list (No Approve button)
             userList.innerHTML = users
                 .map(
                     (user) => `
@@ -99,9 +126,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 )
                 .join("");
         } catch (err) {
-            userList.innerHTML = "Failed to load users.";
+            userList.innerHTML = "❌ Failed to load users.";
         }
     }
 
-    fetchPendingUsers();
+    fetchUsers(); // ✅ Load users on page load
 });
