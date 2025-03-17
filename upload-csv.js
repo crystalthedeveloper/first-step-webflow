@@ -1,7 +1,7 @@
 // upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
-        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+        document.querySelector("#csv-upload-message").textContent = "❌ Supabase Client not found!";
         return;
     }
 
@@ -32,12 +32,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     return;
                 }
 
+                let successCount = 0;
+                let errorMessages = [];
+
                 try {
                     for (const user of users) {
-                        // ✅ Step 1: Use a fixed password for all users
-                        const tempPassword = "TempPass123!";
+                        const tempPassword = "TempPass123!"; // Default password
 
-                        // ✅ Step 2: Create user in Supabase Authentication
+                        // ✅ Step 1: Create user in Supabase Auth
                         const { error: authError } = await supabase.auth.signUp({
                             email: user.email,
                             password: tempPassword,
@@ -50,25 +52,37 @@ document.addEventListener("DOMContentLoaded", async () => {
                         });
 
                         if (authError) {
-                            console.error(`❌ Error creating user in Auth: ${authError.message}`);
-                            continue; // Skip inserting if Auth fails
+                            errorMessages.push(`❌ ${user.email}: ${authError.message}`);
+                            continue; // Skip inserting into the table if Auth fails
                         }
 
-                        // ✅ Step 3: Insert into `users_access` table
-                        await supabase.from("users_access").insert([
+                        // ✅ Step 2: Insert user into `users_access` table
+                        const { error: dbError } = await supabase.from("users_access").insert([
                             {
                                 email: user.email,
                                 first_name: user.first_name,
                                 last_name: user.last_name,
-                                status: "approved", // Automatically approved
+                                status: "approved",
                                 created_at: new Date().toISOString(),
                             }
                         ]);
 
-                        console.log(`✅ User created: ${user.email}, Password: ${tempPassword}`);
+                        if (dbError) {
+                            errorMessages.push(`❌ ${user.email}: Database error - ${dbError.message}`);
+                            continue;
+                        }
+
+                        successCount++;
                     }
 
-                    messageBox.textContent = "✅ CSV uploaded successfully! Users can log in now.";
+                    // ✅ Update UI message
+                    if (successCount > 0) {
+                        messageBox.innerHTML = `✅ ${successCount} users uploaded successfully! Users can log in now.`;
+                    }
+                    if (errorMessages.length > 0) {
+                        messageBox.innerHTML += `<br><br>${errorMessages.join("<br>")}`;
+                    }
+
                     fileInput.value = ""; // Reset file input
                     fetchUsers(); // Refresh user list
                 } catch (err) {
@@ -87,7 +101,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             .map((row) => {
                 const [email, firstName, lastName] = row.split(",");
                 if (!email || !firstName || !lastName) return null;
-
                 return {
                     email: email.trim(),
                     first_name: firstName.trim(),
