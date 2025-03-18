@@ -1,7 +1,8 @@
 // upload-csv.js
 document.addEventListener("DOMContentLoaded", async () => {
+    // Wait for Supabase to load
     if (!window.supabaseClient) {
-        document.querySelector("#csv-upload-message").textContent = "❌ Supabase Client not found!";
+        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
         return;
     }
 
@@ -16,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             messageBox.textContent = "🔄 Uploading...";
 
             if (!fileInput.files.length) {
-                messageBox.textContent = "❌ Please select a CSV file.";
+                messageBox.textContent = "Please select a CSV file.";
                 return;
             }
 
@@ -28,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const users = parseCSV(csvData);
 
                 if (users.length === 0) {
-                    messageBox.textContent = "❌ Invalid CSV file.";
+                    messageBox.textContent = "Invalid CSV file.";
                     return;
                 }
 
@@ -51,16 +52,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ]);
 
                         if (dbError) {
-                            errorMessages.push(`❌ ${user.email}: ${dbError.message}`);
+                            errorMessages.push(`${user.email}: ${dbError.message}`);
                             continue;
                         }
 
                         successCount++;
                     }
 
-                    // ✅ Update UI message
+                    // Update UI message
                     if (successCount > 0) {
-                        messageBox.innerHTML = `✅ ${successCount} users uploaded successfully!`;
+                        messageBox.innerHTML = `${successCount} users uploaded successfully!`;
                     }
                     if (errorMessages.length > 0) {
                         messageBox.innerHTML += `<br><br>${errorMessages.join("<br>")}`;
@@ -69,7 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     fileInput.value = ""; // Reset file input
                     fetchUsers(); // Refresh user list
                 } catch (err) {
-                    messageBox.textContent = "❌ Error uploading CSV: " + err.message;
+                    messageBox.textContent = "Error uploading CSV: " + err.message;
                 }
             };
 
@@ -77,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    /** ✅ FUNCTION: Parse CSV Data **/
+    /** FUNCTION: Parse CSV Data **/
     function parseCSV(csv) {
         const rows = csv.split("\n").slice(1);
         return rows
@@ -93,7 +94,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .filter(Boolean);
     }
 
-    /** ✅ FUNCTION: Fetch Users from `users_access` **/
+    /** FUNCTION: Fetch Users from `users_access` **/
     async function fetchUsers() {
         const userList = document.querySelector("#pending-users-list");
         if (!userList) return;
@@ -122,9 +123,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 )
                 .join("");
         } catch (err) {
-            userList.innerHTML = "❌ Failed to load users.";
+            userList.innerHTML = "Failed to load users.";
         }
     }
 
-    fetchUsers(); // ✅ Load users on page load
+    fetchUsers(); // Load users on page load
 });
