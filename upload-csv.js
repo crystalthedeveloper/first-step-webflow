@@ -2,20 +2,17 @@
 document.addEventListener("DOMContentLoaded", async function () {
     console.log("🚀 CSV Upload Form Initialized");
 
+    // ✅ Import Supabase Client
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+
+    // ✅ Replace with your Supabase Project Details
     const SUPABASE_URL = "https://hcchvhjuegysshozazad.supabase.co";
-    const supabase = createClient(SUPABASE_URL, "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE"); // Anon Key Safe Here
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2h2aGp1ZWd5c3Nob3phemFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MzQ3OTUsImV4cCI6MjA1NTUxMDc5NX0.Y2cu9q58j8Ac8ApLp7uPcyvHx_-WFA-Wm7ZhIXBMRiE"; // 🔥 Consider securing this in an Edge Function
 
-    // ✅ Get the user's authentication session
-    const { data: session, error } = await supabase.auth.getSession();
+    // ✅ Initialize Supabase Client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    if (error || !session || !session.session) {
-        console.error("❌ User not authenticated:", error);
-        alert("You must be logged in to upload files.");
-        return;
-    }
-
-    const userToken = session.session.access_token;
-
+    // ✅ Select Form Elements
     const form = document.querySelector("#csv-upload-form");
     const fileInput = document.querySelector("#csv-upload");
     const messageDiv = document.querySelector("#csv-upload-message");
@@ -37,28 +34,20 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
 
-        // ✅ Upload to Supabase Edge Function with Authorization
+        // ✅ Upload CSV file to Supabase Storage
         try {
             messageDiv.innerHTML = "⏳ Uploading file...";
 
-            const formData = new FormData();
-            formData.append("file", file);
+            const { data, error } = await supabase.storage
+                .from("csv-uploads")
+                .upload(`uploads/${file.name}`, file, {
+                    cacheControl: "3600",
+                    upsert: true, // Allows overwriting
+                });
 
-            const response = await fetch(`${SUPABASE_URL}/functions/v1/upload-csv`, {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "Authorization": `Bearer ${userToken}` // Secure!
-                },
-            });
+            if (error) throw error;
 
-            const result = await response.json();
-
-            if (response.ok) {
-                messageDiv.innerHTML = `✅ Upload successful! File: ${result.path}`;
-            } else {
-                throw new Error(result.error);
-            }
+            messageDiv.innerHTML = `✅ Upload successful! File: ${data.path}`;
         } catch (error) {
             console.error("❌ Upload error:", error);
             messageDiv.innerHTML = `❌ Upload failed: ${error.message}`;
