@@ -30,7 +30,7 @@
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("https://your-supabase-url.functions.supabase.co/upload-csv", {
+        const response = await fetch("https://hcchvhjuegysshozazad.supabase.co/functions/v1/upload-csv", {
           method: "POST",
           body: formData,
         });
