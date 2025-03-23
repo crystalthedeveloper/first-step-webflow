@@ -24,12 +24,9 @@ jQueryScript.onload = function () {
 
         if (fullName) {
           jQuery("#certificate-name").text(fullName);
-
-          // Update all elements with the class "congratulation-name" on every slide
           jQuery(".congratulation-name").each(function () {
             jQuery(this).text(fullName);
           });
-
         } else {
           jQuery(".congratulation-name, #certificate-name").text("User");
         }
@@ -38,41 +35,27 @@ jQueryScript.onload = function () {
       }
     }
 
-    // **Fetch and Update User Info on Page Load**
     await updateUserInfo();
 
-    // **Update on Auth State Change (Login/Logout)**
     supabase.auth.onAuthStateChange((event, session) => {
       updateUserInfo();
     });
 
-    // **Allow Clicking True/False Again**
     jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
       var $this = jQuery(this);
       var $siblings = $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false');
-
-      // Remove selection from the other option
       $siblings.find('.icon-circle').removeClass('selected');
-
-      // Add selection to the clicked option
       $this.find('.icon-circle').addClass('selected');
     });
 
-    // **Move Slider to First Slide and Hide Arrows on Completion**
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
-        // Move the slider to the first slide
         slider.find(".w-slider-mask").css("transform", "translateX(0px)");
-
-        // Hide left and right arrows
         jQuery(".w-icon-slider-left, .w-icon-slider-right").addClass("hidden");
-
-        console.log("✅ Slider moved to the first slide and arrows are hidden.");
       }
     }
 
-    // **Handle Quiz Completion & Disable Navigation**
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       var $collectionItem = jQuery(this).closest('.quiz-cms-item');
       var $trueOption = $collectionItem.find('.quiz-cms-link-true');
@@ -86,7 +69,6 @@ jQueryScript.onload = function () {
           var totalQuestions = jQuery(".quiz-cms-item").length;
           var answeredQuestions = jQuery('.quiz-cms-item .icon-circle.selected').length;
 
-          // Mark answers
           $collectionItem.find('.true-false-options-wrap').each(function () {
             var $link = jQuery(this);
             if ($link.find('.selected .status').hasClass('correct')) {
@@ -97,23 +79,34 @@ jQueryScript.onload = function () {
             }
           });
 
-          // **Disable Clicking After Submission**
           $trueOption.addClass('submitted').off('click');
           $falseOption.addClass('submitted').off('click');
 
           if (totalQuestions === answeredQuestions) {
-            setTimeout(function () {
+            setTimeout(async function () {
               jQuery('.pass-wrap').removeClass('hide');
-              jQuery('.slide-nav, .slider-arrow-icon').addClass('hidden'); // Hide navigation
-              moveToFirstSlide(); // Move slider to first slide
-              updateUserInfo(); // Ensure full name is updated
+              jQuery('.slide-nav, .slider-arrow-icon').addClass('hidden');
+              moveToFirstSlide();
+              updateUserInfo();
+
+              // ✅ Save quiz name to Supabase
+              const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
+              const { data: sessionData } = await supabase.auth.getSession();
+              const user = sessionData?.session?.user;
+
+              if (user) {
+                await supabase
+                  .from("users_access")
+                  .update({ quiz_complete: courseSlug })
+                  .eq("email", user.email);
+              }
+
             }, 2000);
           }
         }
       }
     });
 
-    // **PDF Download Logic for CMS Buttons**
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
@@ -127,7 +120,6 @@ jQueryScript.onload = function () {
           certificateWrap.classList.remove("hide");
           certificateWrap.style.display = "block";
 
-          // Ensure the full name is added before generating PDF
           updateUserInfo();
 
           html2pdf()
@@ -143,7 +135,7 @@ jQueryScript.onload = function () {
         }
       });
     });
-
   });
 };
+
 document.head.appendChild(jQueryScript);
