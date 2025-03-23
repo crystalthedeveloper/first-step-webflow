@@ -74,10 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 "colascanada.ca": "https://firststep-46e83b.webflow.io/colascanada/home",
                 "blackandmcdonald.com": "https://firststep-46e83b.webflow.io/blackandmcdonald/home",
                 "greenshield.ca": "https://firststep-46e83b.webflow.io/greenshield/home",
-                "crystalthedeveloper.ca": "https://firststep-46e83b.webflow.io",
             };
 
-            const redirectUrl = lastVisitedPage || domainRedirects[domain] || "https://firststep-46e83b.webflow.io/user-pages/access-denied";
+            // 👇 Changed the fallback redirect to the default login home page
+            const redirectUrl = lastVisitedPage || domainRedirects[domain] || "https://firststep-46e83b.webflow.io/login/home";
+
 
             console.log(`🔄 Redirecting user to: ${redirectUrl}`);
 
