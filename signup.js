@@ -40,9 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
         email,
         password,
         options: {
-          data: { first_name: firstName, last_name: lastName }
+          data: { first_name: firstName, last_name: lastName },
+          emailRedirectTo: "https://firststep-46e83b.webflow.io/user-pages/log-in" // ✅ Add this!
         }
-      });
+      });      
 
       if (error) throw error;
 
