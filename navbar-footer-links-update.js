@@ -13,9 +13,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: { session } } = await supabase.auth.getSession();
 
     const homeLinks = document.querySelectorAll("#home, #home-footer");
-    const modulesLinks = document.querySelectorAll("#modules, #modules-footer");
-    const firstStepsLinks = document.querySelectorAll("#firststep, #firststep-footer");
-    const theLibraryLinks = document.querySelectorAll("#the-library, #the-library-footer");
+    const modulesLinks = document.querySelectorAll("#modules, #modules-footer,#the-modules-button");
+    const firstStepsLinks = document.querySelectorAll("#firststep, #firststep-footer,#first-steps-button");
+    const theLibraryLinks = document.querySelectorAll("#the-library, #the-library-footer,#the-library-button");
 
     if (homeLinks.length === 0) {
         console.error("Navbar or footer link with ID 'firststep' not found.");
