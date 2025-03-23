@@ -1,20 +1,21 @@
 // webflow-quiz 
 "use strict";
 
-// ✅ Add jQuery to the page
-var jQueryScript = document.createElement("script");
-jQueryScript.src = "https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js";
+// Create script element for jQuery
+var jQueryScript = document.createElement('script');
+jQueryScript.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js';
 jQueryScript.onload = function () {
   var jQuery = $.noConflict(true);
 
-  // Wait for Supabase to load
   if (!window.supabaseClient) {
+    console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
     return;
   }
+
   const supabase = window.supabaseClient;
 
   jQuery(document).ready(async function () {
-    // ✅ Update name on certificate
+    // ✅ Update user name in the UI
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -30,15 +31,14 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ Toggle selection on click
-    jQuery(".quiz-cms-link-true, .quiz-cms-link-false").on("click", function () {
+    // ✅ Toggle selected answer
+    jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
       const $this = jQuery(this);
-      const $siblings = $this.siblings(".quiz-cms-link-true, .quiz-cms-link-false");
-      $siblings.find(".icon-circle").removeClass("selected");
-      $this.find(".icon-circle").addClass("selected");
+      $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false').find('.icon-circle').removeClass('selected');
+      $this.find('.icon-circle').addClass('selected');
     });
 
-    // ✅ Reset slider to first slide
+    // ✅ Reset slider
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -47,38 +47,38 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Quiz submission
-    jQuery(".submit-answer").on("click", function () {
-      const $item = jQuery(this).closest(".quiz-cms-item");
-      const $true = $item.find(".quiz-cms-link-true");
-      const $false = $item.find(".quiz-cms-link-false");
+    // ✅ Handle Submit button
+    jQuery('.quiz-cms-item .submit-answer').on('click', function () {
+      const $item = jQuery(this).closest('.quiz-cms-item');
+      const $true = $item.find('.quiz-cms-link-true');
+      const $false = $item.find('.quiz-cms-link-false');
       const $submit = jQuery(this);
 
-      if (!$submit.hasClass("submitted") &&
-        ($true.find(".icon-circle").hasClass("selected") || $false.find(".icon-circle").hasClass("selected"))
+      if (!$submit.hasClass('submitted') &&
+        ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))
       ) {
-        $submit.addClass("submitted");
+        $submit.addClass('submitted');
 
         jQuery(".quiz-cms-item").each(function () {
           const $link = jQuery(this);
-          if ($link.find(".selected .status").hasClass("correct")) {
-            $link.find(".icon-circle").addClass("answer-true");
+          if ($link.find('.selected .status').hasClass('correct')) {
+            $link.find('.icon-circle').addClass('answer-true');
           } else {
-            $link.find(".icon-circle").addClass("answer-false");
-            $link.find(".wrong-wrap").removeClass("hide");
+            $link.find('.icon-circle').addClass('answer-false');
+            $link.find('.wrong-wrap').removeClass('hide');
           }
         });
 
-        $true.addClass("submitted").off("click");
-        $false.addClass("submitted").off("click");
+        $true.addClass('submitted').off('click');
+        $false.addClass('submitted').off('click');
 
         const total = jQuery(".quiz-cms-item").length;
-        const answered = jQuery(".quiz-cms-item .icon-circle.selected").length;
+        const answered = jQuery('.quiz-cms-item .icon-circle.selected').length;
 
         if (total === answered) {
           setTimeout(() => {
-            jQuery(".pass-wrap").removeClass("hide");
-            jQuery(".slide-nav, .slider-arrow-icon").addClass("hidden");
+            jQuery('.pass-wrap').removeClass('hide');
+            jQuery('.slide-nav, .slider-arrow-icon').addClass('hidden');
             moveToFirstSlide();
             updateUserInfo();
           }, 2000);
@@ -86,7 +86,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // ✅ Handle Certificate Download + Save to Supabase
+    // ✅ Certificate Download + Save Quiz Slug to Supabase
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
@@ -103,7 +103,7 @@ jQueryScript.onload = function () {
 
         await updateUserInfo();
 
-        // ✅ Save courseSlug to quiz_complete[]
+        // ✅ Get current quiz slug
         const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
         const { data: sessionData } = await supabase.auth.getSession();
         const user = sessionData?.session?.user;
@@ -116,29 +116,30 @@ jQueryScript.onload = function () {
             .single();
 
           if (fetchError) {
-            console.error("❌ Failed to fetch quiz list:", fetchError);
+            console.error("❌ Failed to fetch quiz_complete:", fetchError);
           } else {
-            const quizzes = Array.isArray(existing?.quiz_complete) ? existing.quiz_complete : [];
-            if (!quizzes.includes(courseSlug)) {
-              const updated = [...quizzes, courseSlug];
+            const currentList = Array.isArray(existing?.quiz_complete) ? existing.quiz_complete : [];
+
+            if (!currentList.includes(courseSlug)) {
+              const updatedList = [...currentList, courseSlug];
 
               const { error: updateError } = await supabase
                 .from("users_access")
-                .update({ quiz_complete: updated })
+                .update({ quiz_complete: updatedList })
                 .eq("id", user.id);
 
               if (updateError) {
-                console.error("❌ Update failed:", updateError);
+                console.error("❌ Supabase update error:", updateError);
               } else {
-                console.log("✅ Quiz added:", courseSlug);
+                console.log("✅ Quiz saved to Supabase:", courseSlug);
               }
             } else {
-              console.log("ℹ️ Already completed:", courseSlug);
+              console.log("ℹ️ Quiz already recorded:", courseSlug);
             }
           }
         }
 
-        // ✅ Download PDF
+        // ✅ Generate the PDF
         html2pdf()
           .from(certificateContent)
           .set({
