@@ -15,7 +15,7 @@ jQueryScript.onload = function () {
   const supabase = window.supabaseClient;
 
   jQuery(document).ready(async function () {
-    // ✅ Update user name in the UI
+    // ✅ Update user name in UI
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -47,27 +47,31 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Handle Submit button
+    // ✅ Handle quiz submission
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       const $item = jQuery(this).closest('.quiz-cms-item');
       const $true = $item.find('.quiz-cms-link-true');
       const $false = $item.find('.quiz-cms-link-false');
       const $submit = jQuery(this);
 
+      // Only allow submission if one option is selected
       if (!$submit.hasClass('submitted') &&
-        ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))
+          ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))
       ) {
         $submit.addClass('submitted');
 
-        jQuery(".quiz-cms-item").each(function () {
-          const $link = jQuery(this);
-          if ($link.find('.selected .status').hasClass('correct')) {
-            $link.find('.icon-circle').addClass('answer-true');
-          } else {
-            $link.find('.icon-circle').addClass('answer-false');
-            $link.find('.wrong-wrap').removeClass('hide');
+        const $optionsWrap = $item.find('.true-false-options-wrap');
+        const $selected = $optionsWrap.find('.quiz-cms-link-true .icon-circle.selected, .quiz-cms-link-false .icon-circle.selected');
+
+        if ($selected.length > 0) {
+          const isCorrect = $selected.closest('.status').hasClass('correct');
+
+          if (!isCorrect) {
+            $item.find('.wrong-wrap').removeClass('hide');
           }
-        });
+
+          $selected.addClass(isCorrect ? 'answer-true' : 'answer-false');
+        }
 
         $true.addClass('submitted').off('click');
         $false.addClass('submitted').off('click');
@@ -86,7 +90,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // ✅ Certificate Download + Save Quiz Slug to Supabase
+    // ✅ Handle PDF download & quiz save
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
@@ -103,7 +107,7 @@ jQueryScript.onload = function () {
 
         await updateUserInfo();
 
-        // ✅ Get current quiz slug
+        // ✅ Save quiz name to Supabase on certificate click
         const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
         const { data: sessionData } = await supabase.auth.getSession();
         const user = sessionData?.session?.user;
