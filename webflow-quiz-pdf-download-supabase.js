@@ -16,7 +16,6 @@ jQueryScript.onload = function () {
 
   jQuery(document).ready(async function () {
 
-    // ✅ Update name on screen
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -32,7 +31,6 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ Option selection toggle
     jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
       const $this = jQuery(this);
       $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false')
@@ -40,7 +38,6 @@ jQueryScript.onload = function () {
       $this.find('.icon-circle').addClass('selected');
     });
 
-    // ✅ Reset slider
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -49,7 +46,6 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Handle quiz submission
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       const $item = jQuery(this).closest('.quiz-cms-item');
       const $true = $item.find('.quiz-cms-link-true');
@@ -57,17 +53,16 @@ jQueryScript.onload = function () {
       const $submit = jQuery(this);
 
       if (!$submit.hasClass('submitted') &&
-        ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))
-      ) {
+          ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))) {
         $submit.addClass('submitted');
 
-        // Only check current selected item
         const $selected = $item.find('.icon-circle.selected');
-        const $status = $selected.closest('.true-false-options-wrap').find('.status');
+        const $option = $selected.closest('.quiz-cms-link-true, .quiz-cms-link-false');
+        const isCorrect = $option.find('.status').hasClass('correct');
 
-        if ($status.hasClass('correct')) {
+        if (isCorrect) {
           $selected.addClass('answer-true');
-          $item.find('.wrong-wrap').addClass('hide'); // Just in case
+          $item.find('.wrong-wrap').addClass('hide');
         } else {
           $selected.addClass('answer-false');
           $item.find('.wrong-wrap').removeClass('hide');
@@ -90,7 +85,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // ✅ Handle PDF + Supabase update
+    // ✅ PDF + Edge Function call
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
@@ -107,43 +102,34 @@ jQueryScript.onload = function () {
 
         await updateUserInfo();
 
-        // ✅ Save course slug to Supabase
-        const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
         const { data: sessionData } = await supabase.auth.getSession();
         const user = sessionData?.session?.user;
+        const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
 
         if (user) {
-          const { data: existing, error: fetchError } = await supabase
-            .from("users_access")
-            .select("quiz_complete")
-            .eq("id", user.id)
-            .single();
+          try {
+            const response = await fetch("https://hcchvhjuegysshozazad.supabase.co/functions/v1/save-quiz", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                user_email: user.email,
+                quiz_slug: courseSlug
+              })
+            });
 
-          if (fetchError) {
-            console.error("❌ Failed to fetch quiz_complete:", fetchError);
-          } else {
-            const currentList = Array.isArray(existing?.quiz_complete) ? existing.quiz_complete : [];
-
-            if (!currentList.includes(courseSlug)) {
-              const updatedList = [...currentList, courseSlug];
-
-              const { error: updateError } = await supabase
-                .from("users_access")
-                .update({ quiz_complete: updatedList })
-                .eq("id", user.id);
-
-              if (updateError) {
-                console.error("❌ Supabase update error:", updateError);
-              } else {
-                console.log("✅ Quiz saved to Supabase:", courseSlug);
-              }
+            const result = await response.json();
+            if (!response.ok) {
+              console.error("❌ Edge Function Error:", result.error);
             } else {
-              console.log("ℹ️ Quiz already recorded:", courseSlug);
+              console.log("✅ Edge Function Result:", result);
             }
+          } catch (err) {
+            console.error("❌ Network error calling Edge Function:", err);
           }
         }
 
-        // ✅ Generate Certificate PDF
         html2pdf()
           .from(certificateContent)
           .set({
