@@ -85,7 +85,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // ✅ PDF + Edge Function call
+    // ✅ Handle PDF only (no Edge Function call here)
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
@@ -101,34 +101,6 @@ jQueryScript.onload = function () {
         certificateWrap.style.display = "block";
 
         await updateUserInfo();
-
-        const { data: sessionData } = await supabase.auth.getSession();
-        const user = sessionData?.session?.user;
-        const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
-
-        if (user) {
-          try {
-            const response = await fetch("https://hcchvhjuegysshozazad.supabase.co/functions/v1/save-quiz", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                user_email: user.email,
-                quiz_slug: courseSlug
-              })
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-              console.error("❌ Edge Function Error:", result.error);
-            } else {
-              console.log("✅ Edge Function Result:", result);
-            }
-          } catch (err) {
-            console.error("❌ Network error calling Edge Function:", err);
-          }
-        }
 
         html2pdf()
           .from(certificateContent)
