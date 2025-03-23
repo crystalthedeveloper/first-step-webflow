@@ -7,12 +7,10 @@ jQueryScript.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.mi
 jQueryScript.onload = function () {
   var jQuery = $.noConflict(true);
 
-  // Supabase Client (ensure this script runs after Supabase is initialized)
   const supabase = window.supabaseClient;
 
   jQuery(document).ready(async function () {
-
-    // **Check if user is logged in and update all instances of #user-info & #certificate-name**
+    // ✅ Update user name in the UI
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -41,6 +39,7 @@ jQueryScript.onload = function () {
       updateUserInfo();
     });
 
+    // ✅ Toggle selected answer
     jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
       var $this = jQuery(this);
       var $siblings = $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false');
@@ -48,6 +47,7 @@ jQueryScript.onload = function () {
       $this.find('.icon-circle').addClass('selected');
     });
 
+    // ✅ Reset slider position
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -56,6 +56,7 @@ jQueryScript.onload = function () {
       }
     }
 
+    // ✅ Submit quiz answers
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       var $collectionItem = jQuery(this).closest('.quiz-cms-item');
       var $trueOption = $collectionItem.find('.quiz-cms-link-true');
@@ -95,10 +96,14 @@ jQueryScript.onload = function () {
               const user = sessionData?.session?.user;
 
               if (user) {
-                await supabase
+                const { error } = await supabase
                   .from("users_access")
                   .update({ quiz_complete: courseSlug })
-                  .eq("email", user.email);
+                  .eq("id", user.id); // ✅ safer match
+
+                if (error) {
+                  console.error("❌ Supabase update error:", error);
+                }
               }
 
             }, 2000);
@@ -107,6 +112,7 @@ jQueryScript.onload = function () {
       }
     });
 
+    // ✅ Certificate PDF download
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
@@ -115,24 +121,24 @@ jQueryScript.onload = function () {
       button.addEventListener("click", (event) => {
         event.preventDefault();
 
-        const passWrap = button.closest(".quiz-cms-item").querySelector(".pass-wrap");
-        if (passWrap && !passWrap.classList.contains("hide")) {
-          certificateWrap.classList.remove("hide");
-          certificateWrap.style.display = "block";
+        const passWrap = button.closest(".pass-wrap");
+        if (!passWrap || passWrap.classList.contains("hide")) return;
 
-          updateUserInfo();
+        certificateWrap.classList.remove("hide");
+        certificateWrap.style.display = "block";
 
-          html2pdf()
-            .from(certificateContent)
-            .set({
-              margin: 0,
-              filename: "Certificate.pdf",
-              image: { type: "jpeg", quality: 1 },
-              html2canvas: { scale: 2, useCORS: true, allowTaint: false },
-              jsPDF: { format: "a4", orientation: "landscape" },
-            })
-            .save();
-        }
+        updateUserInfo();
+
+        html2pdf()
+          .from(certificateContent)
+          .set({
+            margin: 0,
+            filename: "Certificate.pdf",
+            image: { type: "jpeg", quality: 1 },
+            html2canvas: { scale: 2, useCORS: true, allowTaint: false },
+            jsPDF: { format: "a4", orientation: "landscape" },
+          })
+          .save();
       });
     });
   });
