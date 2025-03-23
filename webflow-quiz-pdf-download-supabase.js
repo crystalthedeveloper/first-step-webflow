@@ -57,7 +57,7 @@ jQueryScript.onload = function () {
       const $submit = jQuery(this);
 
       if (!$submit.hasClass('submitted') &&
-          ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))
+        ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))
       ) {
         $submit.addClass('submitted');
 
@@ -67,6 +67,7 @@ jQueryScript.onload = function () {
 
         if ($status.hasClass('correct')) {
           $selected.addClass('answer-true');
+          $item.find('.wrong-wrap').addClass('hide'); // Just in case
         } else {
           $selected.addClass('answer-false');
           $item.find('.wrong-wrap').removeClass('hide');
