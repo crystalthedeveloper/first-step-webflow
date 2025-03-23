@@ -60,8 +60,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         // ✅ Changed fallback to /login/home and /login/modules for unknown domains
         const newHomeLink = domainRedirects[userDomain] || "/login/home";
         const newModulesLink = modulesRedirects[userDomain] || "/login/modules";
-        const newFirstStepsLink = modulesRedirects[userDomain] || "/login/first-steps";
-        const newTheLibraryLink = modulesRedirects[userDomain] || "/login/the-library";
+        const newFirstStepsLink = firstStepsRedirects[userDomain] || "/login/first-steps";
+        const newTheLibraryLink = theLibraryRedirects[userDomain] || "/login/the-library";
 
         homeLinks.forEach(link => link.href = newHomeLink);
         modulesLinks.forEach(link => link.href = newModulesLink);

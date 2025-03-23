@@ -1,43 +1,69 @@
 //auth-check.js - Check for user session
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!window.supabaseClient) {
-        console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
-        return;
-    }
+    if (!window.supabaseClient) return;
 
     const supabase = window.supabaseClient;
-    
-    // ✅ Add protected pages, including user account page
+
+    // ✅ Add all protected folders
     const protectedFolders = [
         "/colascanada/",
         "/blackandmcdonald/",
         "/greenshield/",
-        "/user-pages/user-account"
+        "/login/",
+        "/user-pages/user-account",
+        "/first-steps",
+        "/the-library"
     ];
 
-    // ✅ Define which domains have access to which pages
+    // ✅ Define per-domain access
     const domainAccess = {
-        "colascanada.ca": ["/colascanada/home", "/colascanada/modules", "/user-pages/user-account"],
-        "gmail.com": ["/colascanada/home", "/colascanada/modules", "/user-pages/user-account"],
-        "blackandmcdonald.com": ["/blackandmcdonald/home", "/blackandmcdonald/modules", "/user-pages/user-account"],
-        "greenshield.ca": ["/greenshield/home", "/greenshield/modules", "/user-pages/user-account"],
-        "crystalthedeveloper.ca": ["/", "/user-pages/user-account"], 
+        "colascanada.ca": [
+            "/colascanada/home",
+            "/colascanada/modules",
+            "/colascanada/first-steps",
+            "/colascanada/the-library",
+            "/user-pages/user-account"
+        ],
+        "gmail.com": [
+            "/colascanada/home",
+            "/colascanada/modules",
+            "/colascanada/first-steps",
+            "/colascanada/the-library",
+            "/user-pages/user-account"
+        ],
+        "blackandmcdonald.com": [
+            "/blackandmcdonald/home",
+            "/blackandmcdonald/modules",
+            "/blackandmcdonald/first-steps",
+            "/blackandmcdonald/the-library",
+            "/user-pages/user-account"
+        ],
+        "greenshield.ca": [
+            "/greenshield/home",
+            "/greenshield/modules",
+            "/greenshield/first-steps",
+            "/greenshield/the-library",
+            "/user-pages/user-account"
+        ],
+        "crystalthedeveloper.ca": [
+            "/",
+            "/user-pages/user-account",
+            "/login/home",
+            "/login/modules",
+            "/login/first-steps",
+            "/login/the-library"
+        ]
     };
 
     const currentPath = window.location.pathname;
     const isProtected = protectedFolders.some(folder => currentPath.startsWith(folder));
 
-    if (!isProtected) {
-        console.log("This page does not require authentication.");
-        return;
-    }
+    if (!isProtected) return;
 
     try {
-        // ✅ Check if the user is logged in
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !sessionData.session) {
-            console.warn("No active session. Redirecting to login page.");
             window.location.href = "/user-pages/log-in";
             return;
         }
@@ -46,30 +72,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         const domain = email.split("@")[1]?.toLowerCase();
         const allowedPaths = domainAccess[domain] || [];
 
-        // ✅ Ensure access to `/user-pages/user-account` for all logged-in users
-        if (currentPath === "/user-pages/user-account") {
-            console.log(`✅ Logged-in user accessing ${currentPath}. Access granted.`);
-            return; // Allow access without checking domain-specific paths
-        }
+        if (currentPath === "/user-pages/user-account") return;
 
-        // ✅ Check if the user has permission to access the current path
-        if (!allowedPaths.some(path => currentPath.startsWith(path))) {
-            console.warn(`🚨 Unauthorized access to ${currentPath}. Redirecting to: /access-denied`);
+        const isAllowed = allowedPaths.some(path => currentPath.startsWith(path));
+
+        if (!isAllowed) {
             window.location.href = "/access-denied";
             return;
         }
 
-        console.log(`✅ Access granted to ${currentPath}`);
-
         // ✅ Save Last Visited Page
         localStorage.setItem("lastVisitedPage", currentPath);
-
-    } catch (err) {
-        console.error("❌ Session error:", err);
+    } catch (_) {
         window.location.href = "/user-pages/log-in";
     }
 
-    // ✅ Handle Authentication State Changes
+    // ✅ Auth State Listener
     supabase.auth.onAuthStateChange((event, session) => {
         if (session && event === "SIGNED_IN") {
             const email = session.user.email;
@@ -77,10 +95,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const allowedPaths = domainAccess[domain] || [];
 
             const lastVisitedPage = localStorage.getItem("lastVisitedPage") || allowedPaths[0] || "/access-denied";
-            console.log(`🔄 Auth change detected. Redirecting user to: ${lastVisitedPage}`);
             window.location.href = lastVisitedPage;
         } else if (!session) {
-            console.log("🚪 User logged out. Redirecting to login.");
             window.location.href = "/user-pages/log-in";
         }
     });
