@@ -1,7 +1,5 @@
 // save-quiz-result
-// save-quiz-result.js
 document.addEventListener("DOMContentLoaded", async () => {
-    // ✅ Ensure Supabase client is loaded
     if (!window.supabaseClient) {
       console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
       return;
@@ -12,9 +10,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
+      const accessToken = sessionData?.session?.access_token;
   
-      if (!user) {
-        console.warn("⚠️ User not logged in, skipping quiz save.");
+      if (!user || !accessToken) {
+        console.warn("⚠️ User not logged in or missing token, skipping quiz save.");
         return;
       }
   
@@ -24,10 +23,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}` // ✅ Pass access token
         },
         body: JSON.stringify({
-          user_id: user.id,     // ✅ Using user ID for reliability
-          quiz_slug: courseSlug // ✅ Current course slug from URL
+          user_id: user.id,
+          quiz_slug: courseSlug
         }),
       });
   
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!response.ok) {
         console.error("❌ Edge Function Error:", result.error);
       } else {
-        console.log("✅ Quiz save success:", result);
+        console.log("✅ Edge Function Result:", result);
       }
     } catch (error) {
       console.error("❌ Unexpected error calling Edge Function:", error);
