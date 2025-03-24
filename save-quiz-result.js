@@ -1,4 +1,5 @@
 // save-quiz-result
+// save-quiz-result.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
       console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
@@ -23,21 +24,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}` // ✅ Pass access token
+          "Authorization": `Bearer ${accessToken}` // Required for auth (if checking in future)
         },
         body: JSON.stringify({
           user_id: user.id,
-          quiz_slug: courseSlug
+          quiz_slug: courseSlug,
         }),
       });
   
       const result = await response.json();
   
       if (!response.ok) {
-        console.error("❌ Edge Function Error:", result.error);
+        console.error("❌ Edge Function Error:", result.error || result);
       } else {
-        console.log("✅ Edge Function Result:", result);
+        console.log("✅ Quiz result saved:", result);
       }
+  
     } catch (error) {
       console.error("❌ Unexpected error calling Edge Function:", error);
     }
