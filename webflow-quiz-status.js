@@ -1,5 +1,7 @@
 // webflow-quiz-status.js
 
+// webflow-quiz-status.js
+
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {
       console.error("❌ Supabase Client not found! Make sure supabaseClient.js is loaded.");
@@ -17,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
   
-      // ✅ Extract the course slug from each button's href (on the Modules CMS page)
+      // ✅ Loop through all course buttons on the modules page
       document.querySelectorAll("a.button-primary").forEach(async (button) => {
         const href = button.getAttribute("href");
         const courseSlug = href?.split("/courses/")[1];
@@ -39,10 +41,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   
         if (completed.includes(courseSlug)) {
           console.log(`✅ Quiz completed for: ${courseSlug}`);
-          
-          // Find the .overlay-quiz-complete inside the same course block and unhide it
+  
+          // ✅ Show the overlay
           const courseItem = button.closest(".courses-cms-item");
-          courseItem?.querySelector(".overlay-quiz-complete")?.classList.remove("hide");
+          const overlay = courseItem?.querySelector(".overlay-quiz-complete");
+          if (overlay) {
+            overlay.classList.remove("hide");
+            overlay.style.display = "flex"; // ✅ Force it visible even if Webflow sets display: none
+          }
         } else {
           console.log(`ℹ️ Quiz not completed yet for: ${courseSlug}`);
         }
