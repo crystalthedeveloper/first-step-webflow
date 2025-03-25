@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     errorContainer.textContent = "";
 
-    // **Get input values**
+    // ✅ Get input values
     const email = document.querySelector("#signup-email")?.value.trim();
     const firstName = document.querySelector("#signup-first-name")?.value.trim();
     const lastName = document.querySelector("#signup-last-name")?.value.trim();
@@ -35,37 +35,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      // **Step 1: Register User in Supabase Auth**
+      // ✅ Step 1: Register User in Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { first_name: firstName, last_name: lastName },
-          emailRedirectTo: "https://firststep-46e83b.webflow.io/user-pages/log-in" // ✅ Add this!
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+          emailRedirectTo: "https://firststep-46e83b.webflow.io/user-pages/log-in"
         }
-      });      
+      });
 
       if (error) throw error;
 
-      // **Step 2: Add User to `users_access` as "pending"**
+      // ✅ Step 2: Add User to `users_access` with null company
       console.log(`User signed up: ${email}`);
       await supabase.from("users_access").upsert([
         {
           email,
           first_name: firstName,
           last_name: lastName,
-          status: "pending", // Pending until they confirm email
+          status: "pending",         // Pending until they verify email
+          company_id: null,          // ✅ No company linked
           created_at: new Date().toISOString(),
         }
       ]);
 
-      // **Step 3: Redirect to login page**
+      // ✅ Step 3: Show success and redirect
       errorContainer.textContent = "Signup successful! Check your email to verify your account.";
       errorContainer.style.color = "green";
 
       setTimeout(() => {
         window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
       }, 3000);
+
     } catch (err) {
       displayError(`Signup failed: ${err.message}`);
       console.error("Signup Error:", err);

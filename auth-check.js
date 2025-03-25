@@ -1,103 +1,131 @@
 //auth-check.js - Check for user session
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) return;
-
+  
     const supabase = window.supabaseClient;
-
-    // ✅ Add all protected folders
+  
+    // ✅ Define protected folders
     const protectedFolders = [
-        "/colascanada/",
-        "/blackandmcdonald/",
-        "/greenshield/",
-        "/login/",
+      "/colascanada/",
+      "/blackandmcdonald/",
+      "/greenshield/",
+      "/login/",
+      "/user-pages/user-account",
+      "/first-steps",
+      "/the-library"
+    ];
+  
+    const currentPath = window.location.pathname;
+    const isProtected = protectedFolders.some(folder => currentPath.startsWith(folder));
+  
+    if (!isProtected) return;
+  
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  
+      if (sessionError || !sessionData.session) {
+        window.location.href = "/user-pages/log-in";
+        return;
+      }
+  
+      const user = sessionData.session.user;
+  
+      // 🔍 Lookup user info and get their company_id
+      const { data: userAccess, error: userAccessError } = await supabase
+        .from("users_access")
+        .select("company_id")
+        .eq("email", user.email)
+        .single();
+  
+      const companyId = userAccess?.company_id || null;
+  
+      // ✅ Allow access to /login/ pages if user is NOT in a company
+      if (!companyId && currentPath.startsWith("/login/")) {
+        localStorage.setItem("lastVisitedPage", currentPath);
+        return;
+      }
+  
+      // 🔍 Fetch company to determine allowed path prefix
+      if (!companyId) {
+        window.location.href = "/access-denied";
+        return;
+      }
+  
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .select("redirect_url")
+        .eq("id", companyId)
+        .single();
+  
+      if (companyError || !companyData?.redirect_url) {
+        window.location.href = "/access-denied";
+        return;
+      }
+  
+      // ✅ Derive allowed prefix from redirect_url
+      const redirectPath = new URL(companyData.redirect_url).pathname;
+      const basePath = redirectPath.split("/")[1]; // e.g. "colascanada"
+      const allowedPrefix = `/${basePath}/`;
+  
+      const alwaysAllowed = [
         "/user-pages/user-account",
         "/first-steps",
         "/the-library"
-    ];
-
-    // ✅ Define per-domain access
-    const domainAccess = {
-        "colascanada.ca": [
-            "/colascanada/home",
-            "/colascanada/modules",
-            "/colascanada/first-steps",
-            "/colascanada/the-library",
-            "/user-pages/user-account"
-        ],
-        "gmail.com": [
-            "/colascanada/home",
-            "/colascanada/modules",
-            "/colascanada/first-steps",
-            "/colascanada/the-library",
-            "/user-pages/user-account"
-        ],
-        "blackandmcdonald.com": [
-            "/blackandmcdonald/home",
-            "/blackandmcdonald/modules",
-            "/blackandmcdonald/first-steps",
-            "/blackandmcdonald/the-library",
-            "/user-pages/user-account"
-        ],
-        "greenshield.ca": [
-            "/greenshield/home",
-            "/greenshield/modules",
-            "/greenshield/first-steps",
-            "/greenshield/the-library",
-            "/user-pages/user-account"
-        ],
-        "crystalthedeveloper.ca": [
-            "/",
-            "/user-pages/user-account",
-            "/login/home",
-            "/login/modules",
-            "/login/first-steps",
-            "/login/the-library"
-        ]
-    };
-
-    const currentPath = window.location.pathname;
-    const isProtected = protectedFolders.some(folder => currentPath.startsWith(folder));
-
-    if (!isProtected) return;
-
-    try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError || !sessionData.session) {
-            window.location.href = "/user-pages/log-in";
-            return;
-        }
-
-        const email = sessionData.session.user.email;
-        const domain = email.split("@")[1]?.toLowerCase();
-        const allowedPaths = domainAccess[domain] || [];
-
-        if (currentPath === "/user-pages/user-account") return;
-
-        const isAllowed = allowedPaths.some(path => currentPath.startsWith(path));
-
-        if (!isAllowed) {
-            window.location.href = "/access-denied";
-            return;
-        }
-
-        // ✅ Save Last Visited Page
-        localStorage.setItem("lastVisitedPage", currentPath);
-    } catch (_) {
-        window.location.href = "/user-pages/log-in";
+      ];
+  
+      const isAllowed =
+        currentPath.startsWith(allowedPrefix) ||
+        alwaysAllowed.some(path => currentPath.startsWith(path));
+  
+      if (!isAllowed) {
+        window.location.href = "/access-denied";
+        return;
+      }
+  
+      // ✅ Save last visited page
+      localStorage.setItem("lastVisitedPage", currentPath);
+    } catch (err) {
+      console.error("auth-check failed:", err);
+      window.location.href = "/user-pages/log-in";
     }
-
-    // ✅ Auth State Listener
-    supabase.auth.onAuthStateChange((event, session) => {
-        if (session && event === "SIGNED_IN") {
-            const email = session.user.email;
-            const domain = email.split("@")[1]?.toLowerCase();
-            const allowedPaths = domainAccess[domain] || [];
-
-            const lastVisitedPage = localStorage.getItem("lastVisitedPage") || allowedPaths[0] || "/access-denied";
+  
+    // ✅ Auth state listener
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && event === "SIGNED_IN") {
+        try {
+          const email = session.user.email;
+  
+          const { data: userAccess } = await supabase
+            .from("users_access")
+            .select("company_id")
+            .eq("email", email)
+            .single();
+  
+          const companyId = userAccess?.company_id || null;
+  
+          // Independent user → send to login/home
+          if (!companyId) {
+            const lastVisitedPage = localStorage.getItem("lastVisitedPage") || "/login/home";
             window.location.href = lastVisitedPage;
-        } else if (!session) {
-            window.location.href = "/user-pages/log-in";
+            return;
+          }
+  
+          const { data: companyData } = await supabase
+            .from("companies")
+            .select("redirect_url")
+            .eq("id", companyId)
+            .single();
+  
+          const redirectPath = new URL(companyData?.redirect_url || "/login/home").pathname;
+          const lastVisitedPage = localStorage.getItem("lastVisitedPage") || redirectPath;
+  
+          window.location.href = lastVisitedPage;
+        } catch (err) {
+          console.error("auth state error:", err);
+          window.location.href = "/access-denied";
         }
+      } else if (!session) {
+        window.location.href = "/user-pages/log-in";
+      }
     });
-});
+  });  

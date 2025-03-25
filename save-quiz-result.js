@@ -1,4 +1,3 @@
-// save-quiz-result
 // save-quiz-result.js
 document.addEventListener("DOMContentLoaded", async () => {
     if (!window.supabaseClient) {

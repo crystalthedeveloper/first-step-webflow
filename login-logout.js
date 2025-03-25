@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.dataset.authAction = user ? "logout" : "login";
       });
     } catch (err) {
-      // silently fail
+      console.error("Auth button update failed:", err);
     }
   }
 
@@ -34,8 +34,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             await updateAuthButtons();
             window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
           }
-        } catch (_) {
-          // silently fail
+        } catch (err) {
+          console.error("Logout error:", err);
         }
       } else if (authAction === "login") {
         try {
@@ -48,21 +48,38 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
 
           const email = user.email;
-          const domain = email.split("@")[1];
+
+          // 🔍 Check if user is in users_access
+          const { data: userAccess, error: accessError } = await supabase
+            .from("users_access")
+            .select("company_id")
+            .eq("email", email)
+            .single();
+
           let redirectUrl = "https://firststep-46e83b.webflow.io/login/home";
 
-          const domainRedirects = {
-            "gmail.com": "https://firststep-46e83b.webflow.io/colascanada/home",
-            "colascanada.ca": "https://firststep-46e83b.webflow.io/colascanada/home",
-            "blackandmcdonald.com": "https://firststep-46e83b.webflow.io/blackandmcdonald/home",
-            "greenshield.ca": "https://firststep-46e83b.webflow.io/greenshield/home"
-          };
+          if (userAccess?.company_id) {
+            // 🔍 Lookup the company redirect
+            const { data: company, error: companyError } = await supabase
+              .from("companies")
+              .select("redirect_url")
+              .eq("id", userAccess.company_id)
+              .single();
 
-          redirectUrl = domainRedirects[domain] || redirectUrl;
+            if (company?.redirect_url) {
+              redirectUrl = company.redirect_url;
+            }
+          }
+
+          // Optional: override with last visited page
+          const lastVisitedPage = localStorage.getItem("lastVisitedPage");
+          if (lastVisitedPage) redirectUrl = lastVisitedPage;
+
+          console.log("🔄 Redirecting to:", redirectUrl);
           window.location.href = redirectUrl;
 
-        } catch (_) {
-          // silently fail
+        } catch (err) {
+          console.error("Login redirect error:", err);
         }
       }
     });

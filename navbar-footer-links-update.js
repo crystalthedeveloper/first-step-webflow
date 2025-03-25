@@ -1,76 +1,68 @@
 // Navbar and Footer Links Update for Webflow with Supabase Authentication
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // Wait for Supabase to load
+    // ✅ Wait for Supabase to load
     if (!window.supabaseClient) {
-        console.error("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
-        return;
+      console.error("Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+      return;
     }
-
+  
     const supabase = window.supabaseClient;
-
-    // Fetch the user's session
-    const { data: { session } } = await supabase.auth.getSession();
-
+  
+    // ✅ Grab nav + footer links
     const homeLinks = document.querySelectorAll("#home, #home-footer");
-    const modulesLinks = document.querySelectorAll("#modules, #modules-footer,#the-modules-button");
-    const firstStepsLinks = document.querySelectorAll("#firststep, #firststep-footer,#first-steps-button");
-    const theLibraryLinks = document.querySelectorAll("#the-library, #the-library-footer,#the-library-button");
-
-    if (homeLinks.length === 0) {
-        console.error("Navbar or footer link with ID 'firststep' not found.");
+    const modulesLinks = document.querySelectorAll("#modules, #modules-footer, #the-modules-button");
+    const firstStepsLinks = document.querySelectorAll("#firststep, #firststep-footer, #first-steps-button");
+    const theLibraryLinks = document.querySelectorAll("#the-library, #the-library-footer, #the-library-button");
+  
+    // ✅ Check if links exist
+    if (homeLinks.length === 0) console.warn("Navbar or footer link with ID 'home' not found.");
+    if (modulesLinks.length === 0) console.warn("Navbar or footer link with ID 'modules' not found.");
+    if (firstStepsLinks.length === 0) console.warn("Navbar or footer link with ID 'firststep' not found.");
+    if (theLibraryLinks.length === 0) console.warn("Navbar or footer link with ID 'the-library' not found.");
+  
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+  
+      if (!user) {
+        // 👤 Not logged in: use public/default routes
+        homeLinks.forEach(link => link.href = "/");
+        modulesLinks.forEach(link => link.href = "/modules");
+        firstStepsLinks.forEach(link => link.href = "/first-steps");
+        theLibraryLinks.forEach(link => link.href = "/the-library");
+        return;
+      }
+  
+      // ✅ Get user from users_access
+      const { data: userAccess, error: userAccessError } = await supabase
+        .from("users_access")
+        .select("company_id")
+        .eq("email", user.email)
+        .single();
+  
+      let basePath = "/login"; // Default for users without a company
+  
+      if (userAccess?.company_id) {
+        const { data: companyData, error: companyError } = await supabase
+          .from("companies")
+          .select("redirect_url")
+          .eq("id", userAccess.company_id)
+          .single();
+  
+        if (companyData?.redirect_url) {
+          const companyPath = new URL(companyData.redirect_url).pathname;
+          basePath = `/${companyPath.split("/")[1]}`; // e.g. /colascanada
+        }
+      }
+  
+      // ✅ Set nav + footer links based on company or default
+      homeLinks.forEach(link => link.href = `${basePath}/home`);
+      modulesLinks.forEach(link => link.href = `${basePath}/modules`);
+      firstStepsLinks.forEach(link => link.href = `${basePath}/first-steps`);
+      theLibraryLinks.forEach(link => link.href = `${basePath}/the-library`);
+  
+    } catch (err) {
+      console.error("Navbar update error:", err);
     }
-
-    if (modulesLinks.length === 0) {
-        console.error("Navbar or footer link with ID 'modules' not found.");
-    }
-
-    if (session && session.user) {
-        const userEmail = session.user.email;
-        const userDomain = userEmail.split("@")[1]?.toLowerCase();
-
-        const domainRedirects = {
-            "gmail.com": "/colascanada/home",
-            "colascanada.ca": "/colascanada/home",
-            "blackandmcdonald.com": "/blackandmcdonald/home",
-            "greenshield.ca": "/greenshield/home"
-        };
-
-        const modulesRedirects = {
-            "gmail.com": "/colascanada/modules",
-            "colascanada.ca": "/colascanada/modules",
-            "blackandmcdonald.com": "/blackandmcdonald/modules",
-            "greenshield.ca": "/greenshield/modules"
-        };
-
-        const firstStepsRedirects = {
-            "gmail.com": "/colascanada/first-steps",
-            "colascanada.ca": "/colascanada/first-steps",
-            "blackandmcdonald.com": "/blackandmcdonald/first-steps",
-            "greenshield.ca": "/greenshield/first-steps"
-        };
-
-        const theLibraryRedirects = {
-            "gmail.com": "/colascanada/the-library",
-            "colascanada.ca": "/colascanada/the-library",
-            "blackandmcdonald.com": "/blackandmcdonald/the-library",
-            "greenshield.ca": "/greenshield/the-library"
-        };
-
-        // ✅ Changed fallback to /login/home and /login/modules for unknown domains
-        const newHomeLink = domainRedirects[userDomain] || "/login/home";
-        const newModulesLink = modulesRedirects[userDomain] || "/login/modules";
-        const newFirstStepsLink = firstStepsRedirects[userDomain] || "/login/first-steps";
-        const newTheLibraryLink = theLibraryRedirects[userDomain] || "/login/the-library";
-
-        homeLinks.forEach(link => link.href = newHomeLink);
-        modulesLinks.forEach(link => link.href = newModulesLink);
-        firstStepsLinks.forEach(link => link.href = newFirstStepsLink);
-        theLibraryLinks.forEach(link => link.href = newTheLibraryLink);
-    } else {
-        homeLinks.forEach(link => link.href = "/"); // Optional: keep as is or point to login
-        modulesLinks.forEach(link => link.href = "/modules"); // Optional: adjust for logged-out users
-        firstStepsLinks.forEach(link => link.href = "/first-steps"); // Optional: adjust for logged-out users
-        theLibraryLinks.forEach(link => link.href = "/the-library"); // Optional: adjust for logged-out users
-    }
-});
+  });  
