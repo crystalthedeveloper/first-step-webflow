@@ -7,7 +7,6 @@ document.querySelector("#company-csv-upload-form")?.addEventListener("submit", a
     message.textContent = "";
     message.style.color = "";
   
-    // ✅ Wait for Supabase client to load
     if (!window.supabaseClient) {
       console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
       message.textContent = "Supabase not ready. Please try again later.";
@@ -15,8 +14,9 @@ document.querySelector("#company-csv-upload-form")?.addEventListener("submit", a
       return;
     }
   
-    const file = fileInput?.files?.[0];
+    const supabase = window.supabaseClient;
   
+    const file = fileInput?.files?.[0];
     if (!file) {
       message.textContent = "Please select a CSV file.";
       message.style.color = "red";
@@ -26,12 +26,28 @@ document.querySelector("#company-csv-upload-form")?.addEventListener("submit", a
     try {
       const csvText = await file.text();
   
+      // ✅ Get session and token
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+  
+      if (sessionError || !session) {
+        message.textContent = "❌ You must be logged in to upload.";
+        message.style.color = "red";
+        return;
+      }
+  
+      const token = session.access_token;
+  
+      // ✅ Send the token in the Authorization header
       const response = await fetch("https://hcchvhjuegysshozazad.supabase.co/functions/v1/import-companies", {
         method: "POST",
         headers: {
-          "Content-Type": "text/csv"
+          "Content-Type": "text/csv",
+          "Authorization": `Bearer ${token}`,
         },
-        body: csvText
+        body: csvText,
       });
   
       const result = await response.json();
@@ -44,6 +60,7 @@ document.querySelector("#company-csv-upload-form")?.addEventListener("submit", a
         message.textContent = `❌ Import failed: ${result.error}`;
         console.error("Import Error:", result.error);
       }
+  
     } catch (err) {
       message.style.color = "red";
       message.textContent = `❌ Unexpected error: ${err.message}`;
