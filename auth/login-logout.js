@@ -1,4 +1,16 @@
-// Login & Logout Button
+/**
+ * login-logout.js
+ * -------------------------------
+ * 🔐 Login & Logout Toggle Script for Webflow
+ * - Updates button text to show "Login" or "Logout" based on session
+ * - Handles logout action via Supabase
+ * - On login, redirects user to:
+ *    - Their company page (if found)
+ *    - Or default login/home page
+ *    - Or their last visited page (if stored)
+ * -------------------------------
+ */
+
 document.addEventListener("DOMContentLoaded", async () => {
   if (!window.supabaseClient) return;
 
@@ -7,6 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!toggleBtns.length) return;
 
+  // 🔄 Update button text and action based on session
   async function updateAuthButtons() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -28,6 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const authAction = btn.dataset.authAction;
 
       if (authAction === "logout") {
+        // 🔓 Logout flow
         try {
           const { error } = await supabase.auth.signOut();
           if (!error) {
@@ -38,6 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.error("Logout error:", err);
         }
       } else if (authAction === "login") {
+        // 🔐 Login flow
         try {
           const { data: sessionData } = await supabase.auth.getSession();
           const user = sessionData?.session?.user;
@@ -59,7 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           let redirectUrl = "https://firststep-46e83b.webflow.io/login/home";
 
           if (userAccess?.company_id) {
-            // 🔍 Lookup the company redirect
+            // 🔍 Get redirect URL from company
             const { data: company, error: companyError } = await supabase
               .from("companies")
               .select("redirect_url")
@@ -71,7 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
           }
 
-          // Optional: override with last visited page
+          // ⏪ Check for last visited page
           const lastVisitedPage = localStorage.getItem("lastVisitedPage");
           if (lastVisitedPage) redirectUrl = lastVisitedPage;
 

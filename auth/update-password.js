@@ -1,25 +1,35 @@
-// update password
+/**
+ * update-password.js
+ * -------------------------------
+ * 🔐 Update Password Script (Webflow + Supabase)
+ * - Allows users to set a new password after clicking the reset email link
+ * - Uses Supabase's `updateUser()` to apply the new password
+ * - Displays error, info, or success messages
+ * - Redirects user to login page after update
+ * -------------------------------
+ */
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Wait for Supabase to load
+  // ✅ Ensure Supabase is loaded
   if (!window.supabaseClient) {
     console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
     return;
   }
 
   const supabase = window.supabaseClient;
-
   const updateForm = document.querySelector("#update-password-form");
   const messageContainer = document.querySelector("#message-container");
 
+  // 💬 Helper to display messages with styles
   function displayMessage(message, type = "error") {
     messageContainer.innerHTML = `<p class="${type}">${message}</p>`;
     messageContainer.style.display = "block";
   }
 
+  // 🔄 Handle form submission
   updateForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    // Clear any previous messages
     messageContainer.innerHTML = "";
     messageContainer.style.display = "none";
 
@@ -37,15 +47,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (error) throw error;
 
-      displayMessage("Password updated successfully! Redirecting...", "success");
+      displayMessage("✅ Password updated successfully! Redirecting...", "success");
 
-      // Redirect after a short delay
       setTimeout(() => {
         window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
       }, 2000);
     } catch (err) {
-      displayMessage(`Error: ${err.message}`, "error");
-      console.error("Update password error:", err.message);
+      displayMessage(`❌ Error: ${err.message}`, "error");
+      console.error("❌ Update password error:", err.message);
     }
   });
 });
