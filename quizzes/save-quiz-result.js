@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const supabase = window.supabaseClient;
 
-  const downloadBtn = document.querySelector(".trigger-download");
+  const downloadBtn = document.querySelector("#trigger-download");
 
   if (!downloadBtn) return;
 
