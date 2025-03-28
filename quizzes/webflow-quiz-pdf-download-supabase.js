@@ -1,23 +1,12 @@
-/**
- * webflow-quiz-pdf-download-supabase.js
- * -------------------------------
- * 🧠 Interactive Quiz System for Webflow (jQuery + Supabase)
- * - Handles quiz answer selection and feedback
- * - Shows certificate upon completion
- * - Generates downloadable PDF via html2pdf
- * -------------------------------
- */
-
+// webflow-quiz 
 "use strict";
 
-// ✅ Load jQuery dynamically
-const jQueryScript = document.createElement('script');
+// Create script element for jQuery
+var jQueryScript = document.createElement('script');
 jQueryScript.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js';
-
 jQueryScript.onload = function () {
-  const jQuery = $.noConflict(true);
+  var jQuery = $.noConflict(true);
 
-  // ✅ Check for Supabase
   if (!window.supabaseClient) {
     console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
     return;
@@ -26,7 +15,7 @@ jQueryScript.onload = function () {
   const supabase = window.supabaseClient;
 
   jQuery(document).ready(async function () {
-    // 👤 Update user's name on the certificate
+
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -42,19 +31,13 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ Answer selection: handles clicks on icon, text, or wrapper
-    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false', function () {
-      const $item = jQuery(this).closest('.quiz-cms-item');
-
-      // Remove selection from all options in this quiz item
-      $item.find('.icon-circle').removeClass('selected');
-
-      // Add selection only to the clicked one
-      jQuery(this).find('.icon-circle').addClass('selected');
+    jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
+      const $this = jQuery(this);
+      $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false')
+        .find('.icon-circle').removeClass('selected');
+      $this.find('.icon-circle').addClass('selected');
     });
 
-
-    // 🔄 Reset slider to beginning
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -63,18 +46,14 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Handle quiz submission
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       const $item = jQuery(this).closest('.quiz-cms-item');
       const $true = $item.find('.quiz-cms-link-true');
       const $false = $item.find('.quiz-cms-link-false');
       const $submit = jQuery(this);
 
-      const hasSelected =
-        $true.find('.icon-circle').hasClass('selected') ||
-        $false.find('.icon-circle').hasClass('selected');
-
-      if (!$submit.hasClass('submitted') && hasSelected) {
+      if (!$submit.hasClass('submitted') &&
+          ($true.find('.icon-circle').hasClass('selected') || $false.find('.icon-circle').hasClass('selected'))) {
         $submit.addClass('submitted');
 
         const $selected = $item.find('.icon-circle.selected');
@@ -92,7 +71,6 @@ jQueryScript.onload = function () {
         $true.addClass('submitted').off('click');
         $false.addClass('submitted').off('click');
 
-        // 🎉 If all questions answered, show certificate
         const total = jQuery(".quiz-cms-item").length;
         const answered = jQuery('.quiz-cms-item .icon-circle.selected').length;
 
@@ -107,7 +85,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // 🧾 Generate PDF certificate
+    // ✅ Handle PDF only (no Edge Function call here)
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
