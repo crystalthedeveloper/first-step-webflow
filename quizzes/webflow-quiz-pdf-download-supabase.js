@@ -26,15 +26,13 @@ jQueryScript.onload = function () {
   const supabase = window.supabaseClient;
 
   jQuery(document).ready(async function () {
-    // 👤 Update user's name on the certificate
+    // ✅ Fetch user info
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
-
       const firstName = user?.user_metadata?.first_name || "";
       const lastName = user?.user_metadata?.last_name || "";
       const fullName = `${firstName} ${lastName}`.trim() || "User";
-
       jQuery("#certificate-name").text(fullName);
       jQuery(".congratulation-name").text(fullName);
     }
@@ -42,19 +40,19 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ Fix: Reliable click detection for div-based answers
-    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false', function () {
-      const $item = jQuery(this).closest('.quiz-cms-item');
+    // ✅ FIXED: Answer selection — works with <div> answers
+    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle, .true-or-false-text', function () {
+      const $option = jQuery(this).closest('.quiz-cms-link-true, .quiz-cms-link-false');
+      const $item = $option.closest('.quiz-cms-item');
 
-      // Deselect all answers in this question
-      $item.find('.quiz-cms-link-true .icon-circle, .quiz-cms-link-false .icon-circle').removeClass('selected');
+      // Remove previously selected
+      $item.find('.icon-circle').removeClass('selected');
 
-      // Select only the clicked one
-      jQuery(this).find('.icon-circle').addClass('selected');
+      // Add selected to this one
+      $option.find('.icon-circle').addClass('selected');
     });
 
-
-    // 🔄 Reset slider to beginning
+    // Reset slider to first
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -63,16 +61,14 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Handle quiz submission
+    // ✅ Handle submission
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       const $item = jQuery(this).closest('.quiz-cms-item');
       const $true = $item.find('.quiz-cms-link-true');
       const $false = $item.find('.quiz-cms-link-false');
       const $submit = jQuery(this);
 
-      const hasSelected =
-        $true.find('.icon-circle').hasClass('selected') ||
-        $false.find('.icon-circle').hasClass('selected');
+      const hasSelected = $item.find('.icon-circle.selected').length > 0;
 
       if (!$submit.hasClass('submitted') && hasSelected) {
         $submit.addClass('submitted');
@@ -92,7 +88,6 @@ jQueryScript.onload = function () {
         $true.addClass('submitted').off('click');
         $false.addClass('submitted').off('click');
 
-        // 🎉 If all questions answered, show certificate
         const total = jQuery(".quiz-cms-item").length;
         const answered = jQuery('.quiz-cms-item .icon-circle.selected').length;
 
@@ -107,7 +102,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // 🧾 Generate PDF certificate
+    // ✅ PDF Certificate Download
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
