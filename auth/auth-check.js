@@ -23,8 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "/login/",
     "/user-pages/user-account",
     "/first-steps",
-    "/the-library",
-    "/template/add-users"
+    "/the-library"
   ];
 
   const currentPath = window.location.pathname;
