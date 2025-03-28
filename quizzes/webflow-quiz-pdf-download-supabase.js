@@ -45,12 +45,18 @@ jQueryScript.onload = function () {
     supabase.auth.onAuthStateChange(updateUserInfo);
 
     // 🖱️ Handle answer selection (toggle active icon)
-    jQuery('.quiz-cms-item .quiz-cms-link-true, .quiz-cms-link-false').on('click', function () {
-      const $this = jQuery(this);
-      $this.siblings('.quiz-cms-link-true, .quiz-cms-link-false')
-        .find('.icon-circle').removeClass('selected');
-      $this.find('.icon-circle').addClass('selected');
+    // ✅ More reliable: works even if you click inner elements like icon-circle
+    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle', function (e) {
+      const $option = jQuery(this).closest('.quiz-cms-link-true, .quiz-cms-link-false');
+      const $item = $option.closest('.quiz-cms-item');
+
+      // Deselect all icons inside this question
+      $item.find('.icon-circle').removeClass('selected');
+
+      // Select the one you clicked
+      $option.find('.icon-circle').addClass('selected');
     });
+
 
     // ⏪ Reset slider to beginning (after quiz)
     function moveToFirstSlide() {
