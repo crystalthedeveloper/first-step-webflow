@@ -42,17 +42,17 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ Handle answer selection using <div>s
-    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle', function () {
-      const $option = jQuery(this).closest('.quiz-cms-link-true, .quiz-cms-link-false');
-      const $item = $option.closest('.quiz-cms-item');
+    // ✅ Answer selection: handles clicks on icon, text, or wrapper
+    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false', function () {
+      const $item = jQuery(this).closest('.quiz-cms-item');
 
-      // Deselect others in this item
+      // Remove selection from all options in this quiz item
       $item.find('.icon-circle').removeClass('selected');
 
-      // Mark selected
-      $option.find('.icon-circle').addClass('selected');
+      // Add selection only to the clicked one
+      jQuery(this).find('.icon-circle').addClass('selected');
     });
+
 
     // 🔄 Reset slider to beginning
     function moveToFirstSlide() {
