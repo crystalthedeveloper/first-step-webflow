@@ -2,10 +2,8 @@
  * webflow-quiz-pdf-download-supabase.js
  * -------------------------------
  * 🧠 Interactive Quiz System for Webflow (jQuery + Supabase)
- * - Loads jQuery dynamically
- * - Fetches and displays authenticated user's name
  * - Handles quiz answer selection and feedback
- * - Reveals a certificate upon completion
+ * - Shows certificate upon completion
  * - Generates downloadable PDF via html2pdf
  * -------------------------------
  */
@@ -44,21 +42,19 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // 🖱️ Handle answer selection (toggle active icon)
-    // ✅ More reliable: works even if you click inner elements like icon-circle
-    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle', function (e) {
+    // ✅ Handle answer selection using <div>s
+    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle', function () {
       const $option = jQuery(this).closest('.quiz-cms-link-true, .quiz-cms-link-false');
       const $item = $option.closest('.quiz-cms-item');
 
-      // Deselect all icons inside this question
+      // Deselect others in this item
       $item.find('.icon-circle').removeClass('selected');
 
-      // Select the one you clicked
+      // Mark selected
       $option.find('.icon-circle').addClass('selected');
     });
 
-
-    // ⏪ Reset slider to beginning (after quiz)
+    // 🔄 Reset slider to beginning
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -67,7 +63,7 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Handle answer submission
+    // ✅ Handle quiz submission
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       const $item = jQuery(this).closest('.quiz-cms-item');
       const $true = $item.find('.quiz-cms-link-true');
@@ -96,7 +92,7 @@ jQueryScript.onload = function () {
         $true.addClass('submitted').off('click');
         $false.addClass('submitted').off('click');
 
-        // ✅ If all questions answered, show certificate
+        // 🎉 If all questions answered, show certificate
         const total = jQuery(".quiz-cms-item").length;
         const answered = jQuery('.quiz-cms-item .icon-circle.selected').length;
 
@@ -111,7 +107,7 @@ jQueryScript.onload = function () {
       }
     });
 
-    // 📄 Generate Certificate PDF (only if pass-wrap is visible)
+    // 🧾 Generate PDF certificate
     const cmsButtons = document.querySelectorAll(".button-primary");
     const certificateWrap = document.getElementById("certificate-wrap");
     const certificateContent = document.getElementById("certificate-content");
