@@ -10,14 +10,12 @@
 
 "use strict";
 
-// ✅ Load jQuery dynamically
 const jQueryScript = document.createElement('script');
 jQueryScript.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js';
 
 jQueryScript.onload = function () {
   const jQuery = $.noConflict(true);
 
-  // ✅ Check for Supabase
   if (!window.supabaseClient) {
     console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
     return;
@@ -26,13 +24,11 @@ jQueryScript.onload = function () {
   const supabase = window.supabaseClient;
 
   jQuery(document).ready(async function () {
-    // ✅ Fetch user info
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
-      const firstName = user?.user_metadata?.first_name || "";
-      const lastName = user?.user_metadata?.last_name || "";
-      const fullName = `${firstName} ${lastName}`.trim() || "User";
+      const fullName = `${user?.user_metadata?.first_name || ""} ${user?.user_metadata?.last_name || ""}`.trim() || "User";
+
       jQuery("#certificate-name").text(fullName);
       jQuery(".congratulation-name").text(fullName);
     }
@@ -40,19 +36,23 @@ jQueryScript.onload = function () {
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ FIXED: Answer selection — works with <div> answers
-    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle, .true-or-false-text', function () {
-      const $option = jQuery(this).closest('.quiz-cms-link-true, .quiz-cms-link-false');
-      const $item = $option.closest('.quiz-cms-item');
+    // ✅ Fix click handler (supports <div> structure)
+    jQuery('.quiz-cms-item').on('click', '.quiz-cms-link-true, .quiz-cms-link-false, .icon-circle, .true-or-false-text', function (e) {
+      e.preventDefault();
 
-      // Remove previously selected
+      const $option = jQuery(this).closest('.quiz-cms-link-true, .quiz-cms-link-false');
+      if (!$option.length) return;
+
+      const $item = $option.closest('.quiz-cms-item');
+      const $icon = $option.find('.icon-circle');
+
+      // Remove .selected from all other options in the same item
       $item.find('.icon-circle').removeClass('selected');
 
-      // Add selected to this one
-      $option.find('.icon-circle').addClass('selected');
+      // ✅ Add selected class
+      $icon.addClass('selected');
     });
 
-    // Reset slider to first
     function moveToFirstSlide() {
       const slider = jQuery(".w-slider");
       if (slider.length) {
@@ -61,22 +61,17 @@ jQueryScript.onload = function () {
       }
     }
 
-    // ✅ Handle submission
+    // ✅ Submission logic
     jQuery('.quiz-cms-item .submit-answer').on('click', function () {
       const $item = jQuery(this).closest('.quiz-cms-item');
-      const $true = $item.find('.quiz-cms-link-true');
-      const $false = $item.find('.quiz-cms-link-false');
       const $submit = jQuery(this);
+      const $selected = $item.find('.icon-circle.selected');
+      const $option = $selected.closest('.quiz-cms-link-true, .quiz-cms-link-false');
 
-      const hasSelected = $item.find('.icon-circle.selected').length > 0;
-
-      if (!$submit.hasClass('submitted') && hasSelected) {
+      if (!$submit.hasClass('submitted') && $selected.length) {
         $submit.addClass('submitted');
 
-        const $selected = $item.find('.icon-circle.selected');
-        const $option = $selected.closest('.quiz-cms-link-true, .quiz-cms-link-false');
         const isCorrect = $option.find('.status').hasClass('correct');
-
         if (isCorrect) {
           $selected.addClass('answer-true');
           $item.find('.wrong-wrap').addClass('hide');
@@ -85,8 +80,8 @@ jQueryScript.onload = function () {
           $item.find('.wrong-wrap').removeClass('hide');
         }
 
-        $true.addClass('submitted').off('click');
-        $false.addClass('submitted').off('click');
+        // Prevent double click
+        $item.find('.quiz-cms-link-true, .quiz-cms-link-false').off('click');
 
         const total = jQuery(".quiz-cms-item").length;
         const answered = jQuery('.quiz-cms-item .icon-circle.selected').length;
