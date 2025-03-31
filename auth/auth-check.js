@@ -21,9 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     "/blackandmcdonald/",
     "/greenshield/",
     "/login/",
-    "/user-pages/user-account",
-    "/first-steps",
-    "/the-library"
+    "/user-pages/user-account"
   ];
 
   const currentPath = window.location.pathname;
@@ -76,12 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const redirectPath = new URL(companyData.redirect_url).pathname;
     const basePath = redirectPath.split("/")[1];
     const allowedPrefix = `/${basePath}/`;
-
-    const alwaysAllowed = [
-      "/user-pages/user-account",
-      "/first-steps",
-      "/the-library"
-    ];
+;
 
     const isAllowed =
       currentPath.startsWith(allowedPrefix) ||
