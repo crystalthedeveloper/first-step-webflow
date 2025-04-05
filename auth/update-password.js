@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
       displayMessage("✅ Password updated successfully! Redirecting...", "success");
 
       setTimeout(() => {
-        window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+        window.location.href = "https://www.takethefirststep.me/user-pages/log-in";
       }, 2000);
     } catch (err) {
       displayMessage(`❌ Error: ${err.message}`, "error");

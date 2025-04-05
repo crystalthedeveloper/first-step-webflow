@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // ✅ Set redirect URL
-      let redirectUrl = "https://firststep-46e83b.webflow.io/login/home";
+      let redirectUrl = "https://www.takethefirststep.me/login/home";
 
       if (userData.company_id) {
         const { data: companyData } = await supabase

@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
             first_name: firstName,
             last_name: lastName,
           },
-          emailRedirectTo: "https://firststep-46e83b.webflow.io/user-pages/log-in",
+          emailRedirectTo: "https://www.takethefirststep.me/user-pages/log-in",
         },
       });
 
@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
       errorContainer.style.color = "green";
 
       setTimeout(() => {
-        window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+        window.location.href = "https://www.takethefirststep.me/user-pages/log-in";
       }, 3000);
 
     } catch (err) {

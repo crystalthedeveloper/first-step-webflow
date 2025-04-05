@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
       displayNotification("✅ Account deleted successfully!");
 
       setTimeout(() => {
-        window.location.href = "https://firststep-46e83b.webflow.io";
+        window.location.href = "https://www.takethefirststep.me";
       }, 1500); // Redirect after 1.5 seconds
 
     } catch (err) {

@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const { error } = await supabase.auth.signOut();
           if (!error) {
             await updateAuthButtons();
-            window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+            window.location.href = "https://www.takethefirststep.me/user-pages/log-in";
           }
         } catch (err) {
           console.error("Logout error:", err);
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           const user = sessionData?.session?.user;
 
           if (!user) {
-            window.location.href = "https://firststep-46e83b.webflow.io/user-pages/log-in";
+            window.location.href = "https://www.takethefirststep.me/user-pages/log-in";
             return;
           }
 
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .eq("email", email)
             .single();
 
-          let redirectUrl = "https://firststep-46e83b.webflow.io/login/home";
+          let redirectUrl = "https://www.takethefirststep.me/login/home";
 
           if (userAccess?.company_id) {
             // 🔍 Get redirect URL from company

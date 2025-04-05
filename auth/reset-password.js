@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("📧 Sending password reset email to:", email);
   
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: "https://firststep-46e83b.webflow.io/user-pages/update-password",
+          redirectTo: "https://www.takethefirststep.me/user-pages/update-password",
         });
   
         if (error) throw error;
