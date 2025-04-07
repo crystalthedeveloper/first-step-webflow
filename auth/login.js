@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const firstName = user.user_metadata?.first_name || "Unknown";
       const lastName = user.user_metadata?.last_name || "Unknown";
+      const companyName = user.user_metadata?.company_name || null;
 
       // 🔍 Lookup user in `users_access`
       let { data: userData } = await supabase
@@ -62,9 +63,22 @@ document.addEventListener("DOMContentLoaded", () => {
         .eq("email", email)
         .single();
 
-      // ➕ Create user entry if not found
+      // ➕ If not found, insert user with correct company_id (if applicable)
       if (!userData) {
         console.log("🚀 User not found in users_access. Adding them...");
+
+        let company_id = null;
+
+        if (companyName) {
+          const { data: company } = await supabase
+            .from("companies")
+            .select("id")
+            .eq("name", companyName)
+            .single();
+
+          company_id = company?.id || null;
+        }
+
         const upsertResult = await supabase
           .from("users_access")
           .upsert([
@@ -73,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
               email,
               first_name: firstName,
               last_name: lastName,
-              company_id: null, // default: no company
+              company_id: company_id,
               role: "user",
               status: "approved",
               created_at: new Date().toISOString(),
@@ -81,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ])
           .select()
           .single();
+
         userData = upsertResult.data;
       }
 
