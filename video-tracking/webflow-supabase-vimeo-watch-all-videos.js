@@ -94,9 +94,13 @@ function unhideVideoComplete(videoId, chapter) {
       });
     }
 
-    if (chapter === 3) {
+    if (
+      (chapter === 1 && totalVideos.size === 1) ||
+      chapter === 3
+    ) {
       enableQuizButtonIfAllWatched();
     }
+
   });
 }
 
