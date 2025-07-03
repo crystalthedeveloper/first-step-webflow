@@ -113,8 +113,12 @@
             margin: 0,
             filename: "Certificate.pdf",
             image: { type: "jpeg", quality: 1 },
-            html2canvas: { scale: 2, useCORS: true, allowTaint: false },
-            jsPDF: { format: "a4", orientation: "landscape" },
+            html2canvas: { scale: 3, useCORS: true, allowTaint: false },
+            jsPDF: {
+              unit: "px",
+              format: [1800, 1275],
+              orientation: "landscape"
+            },
           })
           .save();
       });
