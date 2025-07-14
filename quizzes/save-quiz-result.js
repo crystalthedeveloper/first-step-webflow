@@ -2,7 +2,7 @@
  * save-quiz-result.js
  * -------------------------------
  * 🧠 Quiz Result Saver (Webflow + Supabase Edge Function)
- * - Saves quiz result ONLY when .trigger-download is clicked
+ * - Saves quiz result ONLY when #trigger-download or #trigger-modules is clicked
  * -------------------------------
  */
 
@@ -15,11 +15,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const supabase = window.supabaseClient;
 
+  // Select both buttons
   const downloadBtn = document.querySelector("#trigger-download");
+  const modulesBtn = document.querySelector("#trigger-modules");
 
-  if (!downloadBtn) return;
-
-  downloadBtn.addEventListener("click", async () => {
+  // Shared save function
+  const saveQuizResult = async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
@@ -56,5 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("❌ Unexpected error saving quiz result:", error);
     }
-  });
+  };
+
+  // Attach event listener if buttons exist
+  if (downloadBtn) downloadBtn.addEventListener("click", saveQuizResult);
+  if (modulesBtn) modulesBtn.addEventListener("click", saveQuizResult);
 });
