@@ -22,7 +22,8 @@
     async function updateUserInfo() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
-      const fullName = `${user?.user_metadata?.first_name || ""} ${user?.user_metadata?.last_name || ""}`.trim() || "User";
+      const fullName =
+        `${user?.user_metadata?.first_name || ""} ${user?.user_metadata?.last_name || ""}`.trim() || "User";
 
       $("#certificate-name").text(fullName);
       $("#certificate-name-web").text(fullName);
@@ -31,22 +32,6 @@
 
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
-
-    // ✅ Force CSS so quiz options are clickable above slider mask
-    const style = document.createElement("style");
-    style.textContent = `
-      .quiz-cms-link-true,
-      .quiz-cms-link-false {
-        position: relative !important;
-        z-index: 9999 !important;
-        pointer-events: auto !important;
-        cursor: pointer;
-        min-height: 44px; /* iOS recommended tap target */
-        display: flex;
-        align-items: center;
-      }
-    `;
-    document.head.appendChild(style);
 
     // ✅ Mobile + Desktop safe click logic for quiz options
     $(".quiz-cms-item").on("pointerup", ".quiz-cms-link-true, .quiz-cms-link-false", function (e) {
@@ -142,12 +127,12 @@
                 scale: scale,
                 useCORS: true,
                 logging: false,
-                backgroundColor: "#ffffff"
+                backgroundColor: "#ffffff",
               },
               jsPDF: {
                 unit: "px",
                 format: [pdfWidth, pdfHeight],
-                orientation: "landscape"
+                orientation: "landscape",
               },
             })
             .from(certificateContent)
