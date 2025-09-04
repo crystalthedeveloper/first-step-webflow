@@ -10,7 +10,6 @@
 
 "use strict";
 
-// ✅ No need to add jQuery — Webflow already includes it
 (function ($) {
   if (!window.supabaseClient) {
     console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
@@ -32,16 +31,34 @@
     await updateUserInfo();
     supabase.auth.onAuthStateChange(updateUserInfo);
 
-    // ✅ Click logic for <a> quiz options
-    $(".quiz-cms-item").on("click", ".quiz-cms-link-true, .quiz-cms-link-false", function (e) {
+    // ✅ Force CSS so quiz options are clickable above slider mask
+    const style = document.createElement("style");
+    style.textContent = `
+      .quiz-cms-link-true,
+      .quiz-cms-link-false {
+        position: relative !important;
+        z-index: 9999 !important;
+        pointer-events: auto !important;
+        cursor: pointer;
+        min-height: 44px; /* iOS recommended tap target */
+        display: flex;
+        align-items: center;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // ✅ Mobile + Desktop safe click logic for quiz options
+    $(".quiz-cms-item").on("pointerup", ".quiz-cms-link-true, .quiz-cms-link-false", function (e) {
       e.preventDefault();
+      e.stopPropagation(); // prevent slider intercept
+
       const $option = $(this);
       const $item = $option.closest(".quiz-cms-item");
 
       // Remove selected from all
       $item.find(".icon-circle").removeClass("selected");
 
-      // Add selected to clicked one
+      // Add selected to tapped one
       $option.find(".icon-circle").addClass("selected");
     });
 
@@ -74,7 +91,8 @@
           $item.find(".wrong-wrap").removeClass("hide");
         }
 
-        $item.find(".quiz-cms-link-true, .quiz-cms-link-false").off("click");
+        // Disable further changes on this item
+        $item.find(".quiz-cms-link-true, .quiz-cms-link-false").off("pointerup");
 
         const total = $(".quiz-cms-item").length;
         const answered = $(".quiz-cms-item .icon-circle.selected").length;
@@ -107,20 +125,34 @@
 
         await updateUserInfo();
 
-        html2pdf()
-          .from(certificateContent)
-          .set({
-            margin: 0,
-            filename: "Certificate.pdf",
-            image: { type: "jpeg", quality: 1 },
-            html2canvas: { scale: 3, useCORS: true, allowTaint: false },
-            jsPDF: {
-              unit: "px",
-              format: [1800, 1275],
-              orientation: "landscape"
-            },
-          })
-          .save();
+        // 📱 Responsive sizing
+        const isMobile = window.innerWidth < 768;
+        const pdfWidth = isMobile ? window.innerWidth * 2 : 1800;
+        const pdfHeight = isMobile ? window.innerHeight * 2 : 1275;
+        const scale = isMobile ? 2 : 3;
+
+        setTimeout(() => {
+          html2pdf()
+            .set({
+              margin: 0,
+              filename: "Certificate.pdf",
+              image: { type: "jpeg", quality: 1 },
+              html2canvas: {
+                scale: scale,
+                useCORS: true,
+                logging: false,
+                backgroundColor: "#ffffff"
+              },
+              jsPDF: {
+                unit: "px",
+                format: [pdfWidth, pdfHeight],
+                orientation: "landscape"
+              },
+            })
+            .from(certificateContent)
+            .save()
+            .catch((err) => console.error("❌ PDF generation failed:", err));
+        }, 300);
       });
     });
   });
