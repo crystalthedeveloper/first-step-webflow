@@ -25,6 +25,7 @@
       const fullName = `${user?.user_metadata?.first_name || ""} ${user?.user_metadata?.last_name || ""}`.trim() || "User";
 
       $("#certificate-name").text(fullName);
+      $("#certificate-name-web").text(fullName);
       $(".congratulation-name").text(fullName);
     }
 
