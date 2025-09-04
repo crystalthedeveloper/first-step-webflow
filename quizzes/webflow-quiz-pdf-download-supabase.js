@@ -111,10 +111,15 @@
 
         await updateUserInfo();
 
-        // 📱 Responsive sizing
+        // 📏 Detect content size for proper aspect ratio
+        const rect = certificateContent.getBoundingClientRect();
+        const aspectRatio = rect.width / rect.height;
+
+        // 📱 Mobile vs Desktop scaling
         const isMobile = window.innerWidth < 768;
-        const pdfWidth = isMobile ? window.innerWidth * 2 : 1800;
-        const pdfHeight = isMobile ? window.innerHeight * 2 : 1275;
+        const baseWidth = isMobile ? 1280 : 1800;
+        const pdfWidth = baseWidth;
+        const pdfHeight = Math.round(baseWidth / aspectRatio);
         const scale = isMobile ? 2 : 3;
 
         setTimeout(() => {
