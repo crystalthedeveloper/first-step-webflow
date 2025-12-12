@@ -7,59 +7,65 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ✅ Ensure Supabase is available
   if (!window.supabaseClient) {
-    console.error("❌ Supabase Client not found! Ensure `supabaseClient.js` is loaded first.");
+    console.error("❌ Supabase Client not found!");
     return;
   }
 
   const supabase = window.supabaseClient;
 
-  // Select both buttons
   const downloadBtn = document.querySelector("#trigger-download");
   const modulesBtn = document.querySelector("#trigger-modules");
 
-  // Shared save function
-  const saveQuizResult = async () => {
+  const saveQuizResult = async (e) => {
+    // 🔥 STOP the link navigation
+    if (e) e.preventDefault();
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
       const accessToken = sessionData?.session?.access_token;
 
       if (!user || !accessToken) {
-        console.warn("⚠️ User not logged in or missing token, skipping quiz save.");
+        console.warn("⚠️ User not logged in or missing token");
         return;
       }
 
-      const courseSlug = window.location.pathname.split("/courses/")[1] || "unknown-course";
+      const courseSlug =
+        window.location.pathname.split("/courses/")[1] || "unknown-course";
 
-      // 🚀 Call Supabase Edge Function to save result
-      const response = await fetch("https://hcchvhjuegysshozazad.supabase.co/functions/v1/save-quiz", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          quiz_slug: courseSlug,
-        }),
-      });
+      await fetch(
+        "https://hcchvhjuegysshozazad.supabase.co/functions/v1/save-quiz",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            quiz_slug: courseSlug,
+          }),
+        }
+      );
 
-      const result = await response.json();
+      console.log("✅ Quiz saved:", courseSlug);
 
-      if (!response.ok) {
-        console.error("❌ Error saving quiz result:", result.error || result);
-      } else {
-        console.log("✅ Quiz result saved successfully!", result);
+      // ✅ NOW navigate (only for Modules button)
+      if (e?.currentTarget?.id === "trigger-modules") {
+        window.location.href = "/login/modules";
       }
 
-    } catch (error) {
-      console.error("❌ Unexpected error saving quiz result:", error);
+    } catch (err) {
+      console.error("❌ Failed to save quiz:", err);
     }
   };
 
-  // Attach event listener if buttons exist
-  if (downloadBtn) downloadBtn.addEventListener("click", saveQuizResult);
-  if (modulesBtn) modulesBtn.addEventListener("click", saveQuizResult);
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", saveQuizResult);
+  }
+
+  if (modulesBtn) {
+    modulesBtn.addEventListener("click", saveQuizResult);
+  }
 });
