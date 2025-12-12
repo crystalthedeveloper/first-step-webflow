@@ -2,8 +2,8 @@
  * save-quiz-result.js
  * -------------------------------
  * 🧠 Quiz Result Saver (Webflow + Supabase Edge Function)
- * - Saves quiz result ONLY when #trigger-download or #trigger-modules is clicked
- * -------------------------------
+ * - Saves quiz result when module buttons are clicked
+ * - Uses explicit data attributes (no URL guessing)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -14,12 +14,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const supabase = window.supabaseClient;
 
-  const downloadBtn = document.querySelector("#trigger-download");
-  const modulesBtn = document.querySelector("#trigger-modules");
+  // Module buttons (Modules 1–5 and Module 6)
+  const buttons = document.querySelectorAll(
+    "#trigger-modules, #trigger-download"
+  );
 
   const saveQuizResult = async (e) => {
-    // 🔥 STOP the link navigation
-    if (e) e.preventDefault();
+    e.preventDefault(); // 🔥 stop Webflow navigation
+
+    const target = e.currentTarget;
+    const redirectUrl = target.getAttribute("href");
+    const courseSlug = target.getAttribute("data-module-slug");
+
+    if (!courseSlug) {
+      console.error("❌ Missing data-module-slug on button");
+      return;
+    }
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -30,9 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("⚠️ User not logged in or missing token");
         return;
       }
-
-      const courseSlug =
-        window.location.pathname.split("/courses/")[1] || "unknown-course";
 
       await fetch(
         "https://hcchvhjuegysshozazad.supabase.co/functions/v1/save-quiz",
@@ -51,9 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("✅ Quiz saved:", courseSlug);
 
-      // ✅ NOW navigate (only for Modules button)
-      if (e?.currentTarget?.id === "trigger-modules") {
-        window.location.href = "/login/modules";
+      // Navigate only AFTER save completes
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       }
 
     } catch (err) {
@@ -61,11 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  if (downloadBtn) {
-    downloadBtn.addEventListener("click", saveQuizResult);
-  }
-
-  if (modulesBtn) {
-    modulesBtn.addEventListener("click", saveQuizResult);
-  }
+  // Attach to ALL relevant buttons
+  buttons.forEach((btn) =>
+    btn.addEventListener("click", saveQuizResult)
+  );
 });
